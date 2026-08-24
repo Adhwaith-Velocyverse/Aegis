@@ -1,0 +1,8 @@
+{
+  "/page": "app/page.js",
+  "/consent/page": "app/consent/page.js",
+  "/mfa-setup/page": "app/mfa-setup/page.js",
+  "/tenant-verification/page": "app/tenant-verification/page.js",
+  "/mfa/page": "app/mfa/page.js",
+  "/connect-tenant/page": "app/connect-tenant/page.js"
+}
