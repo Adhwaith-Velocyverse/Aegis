@@ -1,5 +1,5 @@
 export type ControlSeverity = 'critical' | 'high' | 'medium' | 'low' | 'informational';
-export type ControlResult = 'pass' | 'fail' | 'not_applicable' | 'needs_manual_review' | 'informational';
+export type ControlResult = 'pass' | 'fail' | 'not_applicable' | 'needs_manual_review' | 'informational' | 'partial';
 export type ControlScore = number | 'NA';
 
 export interface ControlRecommendation {
@@ -136,11 +136,11 @@ const SEVERITY_MAP: Record<string, ControlSeverity> = {
 };
 
 const SCORE_MATRIX: Record<ControlSeverity, Record<string, ControlScore>> = {
-  critical: { pass: 10, fail: 0, needs_manual_review: 1, not_applicable: 'NA', informational: 'NA' },
-  high: { pass: 10, fail: 0, needs_manual_review: 3, not_applicable: 'NA', informational: 'NA' },
-  medium: { pass: 10, fail: 0, needs_manual_review: 5, not_applicable: 'NA', informational: 'NA' },
-  low: { pass: 10, fail: 0, needs_manual_review: 7, not_applicable: 'NA', informational: 'NA' },
-  informational: { pass: 'NA', fail: 'NA', needs_manual_review: 'NA', not_applicable: 'NA', informational: 'NA' },
+  critical: { pass: 10, fail: 0, partial: 1, needs_manual_review: 1, not_applicable: 'NA', informational: 'NA' },
+  high: { pass: 10, fail: 0, partial: 3, needs_manual_review: 3, not_applicable: 'NA', informational: 'NA' },
+  medium: { pass: 10, fail: 0, partial: 5, needs_manual_review: 5, not_applicable: 'NA', informational: 'NA' },
+  low: { pass: 10, fail: 0, partial: 7, needs_manual_review: 7, not_applicable: 'NA', informational: 'NA' },
+  informational: { pass: 'NA', fail: 'NA', partial: 'NA', needs_manual_review: 'NA', not_applicable: 'NA', informational: 'NA' },
 };
 
 const RECOMMENDATIONS_MAP: Record<string, ControlRecommendation> = {

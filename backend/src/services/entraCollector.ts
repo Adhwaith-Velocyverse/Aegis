@@ -25,7 +25,7 @@ export interface EntraControlDefinition {
 }
 
 export interface ControlEvaluationResult {
-  result: 'pass' | 'fail' | 'not_applicable' | 'needs_manual_review' | 'informational';
+  result: 'pass' | 'fail' | 'not_applicable' | 'needs_manual_review' | 'informational' | 'partial';
   evidence: string;
   recommendation: string;
   failedItems?: string[];
@@ -103,7 +103,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     weight: 2,
     automatable: true,
     quickAssessment: true,
-    endpoints: [ENTRA_ENDPOINTS.SECURITY_DEFAULTS, ENTRA_ENDPOINTS.CONDITIONAL_ACCESS_POLICIES],
+    endpoints: [ENTRA_ENDPOINTS.SECURITY_DEFAULTS, ENTRA_ENDPOINTS.CONDITIONAL_ACCESS_POLICIES, ENTRA_ENDPOINTS.MFA_REGISTRATION_DETAILS, ENTRA_ENDPOINTS.MEMBER_USERS_COUNT],
     evaluate: (data) => {
       const sd = data[ENTRA_ENDPOINTS.SECURITY_DEFAULTS];
       const ca = data[ENTRA_ENDPOINTS.CONDITIONAL_ACCESS_POLICIES];
@@ -115,6 +115,15 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
 
       if (sdEnabled) return { result: 'pass', evidence: 'Security Defaults enabled', recommendation: '' };
       if (hasMfaPolicy) return { result: 'pass', evidence: 'CA policy requires MFA for all users', recommendation: '' };
+
+      // Fall back to user-level MFA registration check
+      const mfaData = data[ENTRA_ENDPOINTS.MFA_REGISTRATION_DETAILS]?.value || [];
+      const totalMemberUsers = data[ENTRA_ENDPOINTS.MEMBER_USERS_COUNT]?.value?.length || data[ENTRA_ENDPOINTS.MEMBER_USERS_COUNT]?.['@odata.count'] || mfaData.length;
+      const mfaRegisteredUsers = mfaData.filter((u: any) => u.isMfaRegistered === true).length;
+
+      if (totalMemberUsers === 0) return { result: 'fail', evidence: 'MFA not enforced for all users', recommendation: 'Enable MFA for all users through Security Defaults or Conditional Access.' };
+      if (mfaRegisteredUsers === 0) return { result: 'fail', evidence: 'No users have MFA registered', recommendation: 'Enable MFA for all users through Security Defaults or Conditional Access.' };
+      if (mfaRegisteredUsers < totalMemberUsers) return { result: 'partial', evidence: `${mfaRegisteredUsers} of ${totalMemberUsers} users have MFA registered`, recommendation: 'Enforce MFA for remaining users who have not registered.' };
 
       return { result: 'fail', evidence: 'MFA not enforced for all users', recommendation: 'Enable MFA for all users through Security Defaults or Conditional Access.' };
     },
@@ -1264,6 +1273,7 @@ export class EntraCollector {
       totalControls: actionableControls.length,
       controlsPass: actionableControls.filter(([, c]) => c.result === 'pass').length,
       controlsFail: actionableControls.filter(([, c]) => c.result === 'fail').length,
+      controlsPartial: actionableControls.filter(([, c]) => c.result === 'partial').length,
       controlsManualReview: actionableControls.filter(([, c]) => c.result === 'needs_manual_review').length,
       controlsNotApplicable: actionableControls.filter(([, c]) => c.result === 'not_applicable').length,
       endpoints: Object.keys(result.rawData).map(endpoint => ({
