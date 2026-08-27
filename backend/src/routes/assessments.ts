@@ -519,7 +519,10 @@ router.post('/trial/:id/submit', authenticate, async (req: AuthRequest, res) => 
 });
 
 // Start Quick/Detailed Assessment (with feature gating)
-router.post('/:type/start', authenticate, canRunAssessment('quick'), async (req: AuthRequest, res) => {
+router.post('/:type/start', authenticate, (req, res, next) => {
+  const type = req.params.type as 'quick' | 'detailed';
+  return canRunAssessment(type)(req, res, next);
+}, async (req: AuthRequest, res) => {
   try {
     const { type } = req.params as { type: AssessmentType };
     const data = startAssessmentSchema.parse(req.body);

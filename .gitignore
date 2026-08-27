@@ -13,6 +13,9 @@ node_modules/
 dist/
 build/
 
+# Generated assessment data
+backend/assessment-data/
+
 # Logs
 *.log
 npm-debug.log*

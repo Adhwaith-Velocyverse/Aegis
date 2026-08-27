@@ -1,6 +1,0 @@
-{
-  "endpoint": "/auditLogs/signIns?$filter=riskState eq 'atRisk'&$count=true",
-  "timestamp": "2026-08-26T13:37:51.655Z",
-  "status": "success",
-  "data": []
-}

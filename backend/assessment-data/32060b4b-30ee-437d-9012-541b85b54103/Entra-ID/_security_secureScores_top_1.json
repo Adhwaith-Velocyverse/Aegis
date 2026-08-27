@@ -1,8 +1,0 @@
-{
-  "endpoint": "/security/secureScores?$top=1",
-  "timestamp": "2026-08-26T16:02:51.979Z",
-  "status": "error",
-  "data": {
-    "error": "Insufficient permissions to access this resource"
-  }
-}
