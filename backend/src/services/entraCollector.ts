@@ -3,13 +3,18 @@ import { getAccessTokenForTenant } from './msalAuth';
 import { AuthenticationError } from '../types/m365';
 import fs from 'fs';
 import path from 'path';
+import {
+  getSeverityForControl,
+  calculateControlScore,
+  getRecommendationForControl,
+} from './controlMetadata';
 
 export interface EntraControlDefinition {
   id: string;
   category: string;
   controlName: string;
   description: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'informational';
   weight: number;
   automatable: boolean;
   endpoints: string[];
@@ -111,7 +116,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
       if (sdEnabled) return { result: 'pass', evidence: 'Security Defaults enabled', recommendation: '' };
       if (hasMfaPolicy) return { result: 'pass', evidence: 'CA policy requires MFA for all users', recommendation: '' };
 
-      return { result: 'fail', evidence: 'MFA not enforced for all users', recommendation: 'Enable Security Defaults or CA policy for MFA' };
+      return { result: 'fail', evidence: 'MFA not enforced for all users', recommendation: 'Enable MFA for all users through Security Defaults or Conditional Access.' };
     },
   },
   {
@@ -139,7 +144,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
 
       if (hasMfaForAdmins) return { result: 'pass', evidence: 'CA policy requires MFA for privileged roles', recommendation: '' };
 
-      return { result: 'fail', evidence: 'No CA policy requires MFA for privileged users', recommendation: 'Create CA policy requiring MFA for privileged roles' };
+      return { result: 'fail', evidence: 'No CA policy requires MFA for privileged users', recommendation: 'Require MFA for all privileged accounts immediately.' };
     },
   },
   {
@@ -147,7 +152,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Authentication & MFA',
     controlName: 'Legacy authentication blocked',
     description: 'Legacy authentication is blocked through CA policies',
-    severity: 'high',
+    severity: 'critical',
     weight: 2,
     automatable: true,
     quickAssessment: true,
@@ -162,7 +167,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
 
       if (sdEnabled) return { result: 'pass', evidence: 'Security Defaults blocks legacy auth', recommendation: '' };
       if (hasBlock) return { result: 'pass', evidence: 'CA policy blocks legacy auth', recommendation: '' };
-      return { result: 'fail', evidence: 'No policy blocks legacy authentication', recommendation: 'Enable Security Defaults or CA policy to block legacy auth' };
+      return { result: 'fail', evidence: 'No policy blocks legacy authentication', recommendation: 'Block legacy authentication using Conditional Access policies.' };
     },
   },
   {
@@ -170,14 +175,14 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Authentication & MFA',
     controlName: 'Microsoft Authenticator enabled',
     description: 'Microsoft Authenticator is enabled',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.AUTH_METHODS_POLICY],
     evaluate: (data) => {
       const config = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.authenticationMethodConfigurations?.find((m: any) => m.id === 'microsoftAuthenticator');
       if (config?.state === 'enabled') return { result: 'pass', evidence: 'Microsoft Authenticator enabled', recommendation: '' };
-      return { result: 'fail', evidence: 'Microsoft Authenticator not enabled', recommendation: 'Enable Microsoft Authenticator' };
+      return { result: 'fail', evidence: 'Microsoft Authenticator not enabled', recommendation: 'Enable Microsoft Authenticator as a primary authentication method.' };
     },
   },
   {
@@ -192,7 +197,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const config = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.authenticationMethodConfigurations?.find((m: any) => m.id === 'fido2');
       if (config?.state === 'enabled') return { result: 'pass', evidence: 'FIDO2 enabled', recommendation: '' };
-      return { result: 'fail', evidence: 'FIDO2 not enabled', recommendation: 'Enable FIDO2 security keys' };
+      return { result: 'fail', evidence: 'FIDO2 not enabled', recommendation: 'Enable FIDO2 Security Keys in Authentication Methods.' };
     },
   },
   {
@@ -207,7 +212,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const config = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.authenticationMethodConfigurations?.find((m: any) => m.id === 'passkey' || m.id === 'fido2');
       if (config?.state === 'enabled') return { result: 'pass', evidence: 'Passkeys enabled', recommendation: '' };
-      return { result: 'fail', evidence: 'Passkeys not enabled', recommendation: 'Enable Passkeys for passwordless auth' };
+      return { result: 'fail', evidence: 'Passkeys not enabled', recommendation: 'Enable Passkeys (FIDO2) authentication.' };
     },
   },
   {
@@ -215,14 +220,14 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Authentication & MFA',
     controlName: 'Temporary Access Pass enabled',
     description: 'TAP is enabled',
-    severity: 'medium',
+    severity: 'low',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.AUTH_METHODS_POLICY],
     evaluate: (data) => {
       const config = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.authenticationMethodConfigurations?.find((m: any) => m.id === 'temporaryAccessPass');
       if (config?.state === 'enabled') return { result: 'pass', evidence: 'TAP enabled', recommendation: '' };
-      return { result: 'fail', evidence: 'TAP not enabled', recommendation: 'Enable Temporary Access Pass' };
+      return { result: 'fail', evidence: 'TAP not enabled', recommendation: 'Enable Temporary Access Pass for secure onboarding and recovery.' };
     },
   },
   {
@@ -230,14 +235,14 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Authentication & MFA',
     controlName: 'SMS Authentication disabled',
     description: 'SMS authentication is disabled',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.AUTH_METHODS_POLICY],
     evaluate: (data) => {
       const config = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.authenticationMethodConfigurations?.find((m: any) => m.id === 'sms');
       if (!config || config.state === 'disabled' || config.state === 'notEnabled') return { result: 'pass', evidence: 'SMS auth disabled', recommendation: '' };
-      return { result: 'fail', evidence: 'SMS auth enabled (less secure)', recommendation: 'Disable SMS auth in favor of Authenticator or FIDO2' };
+      return { result: 'fail', evidence: 'SMS auth enabled (less secure)', recommendation: 'Disable SMS authentication unless required by business.' };
     },
   },
   {
@@ -245,14 +250,14 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Authentication & MFA',
     controlName: 'Voice Call Authentication disabled',
     description: 'Voice call authentication is disabled',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.AUTH_METHODS_POLICY],
     evaluate: (data) => {
       const config = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.authenticationMethodConfigurations?.find((m: any) => m.id === 'voice');
       if (!config || config.state === 'disabled' || config.state === 'notEnabled') return { result: 'pass', evidence: 'Voice auth disabled', recommendation: '' };
-      return { result: 'fail', evidence: 'Voice auth enabled (less secure)', recommendation: 'Disable voice auth in favor of more secure methods' };
+      return { result: 'fail', evidence: 'Voice auth enabled (less secure)', recommendation: 'Disable voice call authentication where possible.' };
     },
   },
   {
@@ -268,7 +273,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const sspr = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.registrationEnforcement?.authenticationMethodsRegistrationCampaign?.state === 'enabled';
       if (sspr) return { result: 'pass', evidence: 'SSPR enabled', recommendation: '' };
-      return { result: 'fail', evidence: 'SSPR not enabled', recommendation: 'Enable SSPR' };
+      return { result: 'fail', evidence: 'SSPR not enabled', recommendation: 'Enable Self-Service Password Reset.' };
     },
   },
   {
@@ -276,7 +281,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Authentication & MFA',
     controlName: 'Password Protection Smart Lockout configured',
     description: 'Smart lockout is configured',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     quickAssessment: true,
@@ -284,7 +289,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const threshold = data[ENTRA_ENDPOINTS.AUTH_METHODS_POLICY]?.value?.lockoutSettings?.lockoutThreshold;
       if (threshold > 0) return { result: 'pass', evidence: `Smart lockout configured (threshold: ${threshold})`, recommendation: '' };
-      return { result: 'fail', evidence: 'Smart lockout not configured', recommendation: 'Configure smart lockout threshold' };
+      return { result: 'fail', evidence: 'Smart lockout not configured', recommendation: 'Configure Smart Lockout with recommended settings.' };
     },
   },
 
@@ -294,7 +299,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Conditional Access',
     controlName: 'Conditional Access policies configured',
     description: 'CA policies are configured',
-    severity: 'high',
+    severity: 'critical',
     weight: 2,
     automatable: true,
     quickAssessment: true,
@@ -302,7 +307,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const enabled = data[ENTRA_ENDPOINTS.CONDITIONAL_ACCESS_POLICIES]?.value?.filter((p: any) => p.state === 'enabled')?.length || 0;
       if (enabled > 0) return { result: 'pass', evidence: `${enabled} CA policies enabled`, recommendation: '' };
-      return { result: 'fail', evidence: 'No enabled CA policies', recommendation: 'Create and enable CA policies' };
+      return { result: 'fail', evidence: 'No enabled CA policies', recommendation: 'Configure Conditional Access policies based on organizational requirements.' };
     },
   },
   {
@@ -310,7 +315,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Conditional Access',
     controlName: 'Conditional Access requires MFA for administrators',
     description: 'CA requires MFA for administrators',
-    severity: 'critical',
+    severity: 'high',
     weight: 2,
     automatable: true,
     quickAssessment: true,
@@ -321,7 +326,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         (p.conditions?.users?.includeRoles?.length > 0 || p.conditions?.users?.includeUsers?.includes('All'))
       );
       if (hasPolicy) return { result: 'pass', evidence: 'CA policy requires MFA for admins', recommendation: '' };
-      return { result: 'fail', evidence: 'No CA policy requires MFA for admins', recommendation: 'Create CA policy requiring MFA for privileged roles' };
+      return { result: 'fail', evidence: 'No CA policy requires MFA for admins', recommendation: 'Configure Conditional Access to require MFA for administrators.' };
     },
   },
   {
@@ -341,7 +346,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         (p.conditions?.signInRiskLevels?.includes('high') || p.conditions?.signInRiskLevels?.includes('medium'))
       );
       if (hasPolicy) return { result: 'pass', evidence: 'CA policy handles high-risk sign-ins', recommendation: '' };
-      return { result: 'fail', evidence: 'No CA policy for high-risk sign-ins', recommendation: 'Create CA policy for high-risk sign-ins' };
+      return { result: 'fail', evidence: 'No CA policy for high-risk sign-ins', recommendation: 'Configure Conditional Access to require MFA for risky sign-ins.' };
     },
   },
   {
@@ -361,7 +366,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         (p.conditions?.userRiskLevels?.includes('high') || p.conditions?.userRiskLevels?.includes('medium'))
       );
       if (hasPolicy) return { result: 'pass', evidence: 'CA policy handles high user risk', recommendation: '' };
-      return { result: 'fail', evidence: 'No CA policy for high user risk', recommendation: 'Create CA policy for high user risk' };
+      return { result: 'fail', evidence: 'No CA policy for high user risk', recommendation: 'Configure Identity Protection user-risk policies.' };
     },
   },
   {
@@ -376,7 +381,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const count = data[ENTRA_ENDPOINTS.NAMED_LOCATIONS]?.value?.length || 0;
       if (count > 0) return { result: 'pass', evidence: `${count} named locations configured`, recommendation: '' };
-      return { result: 'fail', evidence: 'No named locations configured', recommendation: 'Configure named locations' };
+      return { result: 'fail', evidence: 'No named locations configured', recommendation: 'Configure Named Locations for Conditional Access.' };
     },
   },
 {
@@ -396,7 +401,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         p.conditions?.locations?.includeLocations?.length > 0
       );
       if (hasPolicy) return { result: 'pass', evidence: 'CA policy restricts locations', recommendation: '' };
-      return { result: 'fail', evidence: 'No CA policy restricts locations', recommendation: 'Create CA policy to block high-risk locations' };
+      return { result: 'fail', evidence: 'No CA policy restricts locations', recommendation: 'Configure Conditional Access to block risky locations.' };
     },
   },
   {
@@ -413,7 +418,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         p.state === 'enabled' && p.sessionControls?.signInFrequency?.isEnabled === true
       );
       if (hasPolicy) return { result: 'pass', evidence: 'Sign-in frequency configured', recommendation: '' };
-      return { result: 'fail', evidence: 'Sign-in frequency not configured', recommendation: 'Configure sign-in frequency in CA' };
+      return { result: 'fail', evidence: 'Sign-in frequency not configured', recommendation: 'Configure sign-in frequency session controls.' };
     },
   },
   {
@@ -421,7 +426,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Conditional Access',
     controlName: 'Token Protection enabled',
     description: 'Token protection is enabled',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     quickAssessment: true,
@@ -431,7 +436,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         p.state === 'enabled' && p.sessionControls?.tokenProtection?.isEnabled === true
       );
       if (hasPolicy) return { result: 'pass', evidence: 'Token protection enabled', recommendation: '' };
-      return { result: 'fail', evidence: 'Token protection not enabled', recommendation: 'Enable token protection in CA' };
+      return { result: 'fail', evidence: 'Token protection not enabled', recommendation: 'Enable Token Protection for supported workloads.' };
     },
   },
 
@@ -441,7 +446,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Privileged Identity Management',
     controlName: 'PIM enabled',
     description: 'PIM is enabled',
-    severity: 'high',
+    severity: 'critical',
     weight: 2,
     automatable: true,
     quickAssessment: true,
@@ -450,7 +455,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
       const elig = data[ENTRA_ENDPOINTS.ROLE_ELIGIBILITY_SCHEDULES]?.value?.length || 0;
       const assign = data[ENTRA_ENDPOINTS.ROLE_ASSIGNMENT_SCHEDULES]?.value?.length || 0;
       if (elig > 0 || assign > 0) return { result: 'pass', evidence: `PIM configured (${elig} eligible, ${assign} assigned)`, recommendation: '' };
-      return { result: 'fail', evidence: 'PIM not configured', recommendation: 'Enable PIM for JIT privileged access' };
+      return { result: 'fail', evidence: 'PIM not configured', recommendation: 'Enable Microsoft Entra Privileged Identity Management.' };
     },
   },
   {
@@ -466,7 +471,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const count = data[ENTRA_ENDPOINTS.ROLE_ELIGIBILITY_SCHEDULES]?.value?.length || 0;
       if (count > 0) return { result: 'pass', evidence: `${count} eligible role assignments`, recommendation: '' };
-      return { result: 'fail', evidence: 'No JIT activation configured', recommendation: 'Configure eligible role assignments in PIM' };
+      return { result: 'fail', evidence: 'No JIT activation configured', recommendation: 'Configure Just-In-Time activation using PIM.' };
     },
   },
   {
@@ -474,7 +479,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Privileged Identity Management',
     controlName: 'PIM activation requires MFA',
     description: 'PIM activation requires MFA',
-    severity: 'critical',
+    severity: 'high',
     weight: 2,
     automatable: true,
     quickAssessment: true,
@@ -484,7 +489,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         p.effectiveRules?.some((r: any) => r.id === 'MfaRule' || r.claimValue === 'MFA')
       );
       if (hasMfa) return { result: 'pass', evidence: 'MFA required during PIM activation', recommendation: '' };
-      return { result: 'fail', evidence: 'MFA not required during PIM activation', recommendation: 'Configure PIM to require MFA' };
+      return { result: 'fail', evidence: 'MFA not required during PIM activation', recommendation: 'Require MFA for PIM activation.' };
     },
   },
 
@@ -494,7 +499,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Privileged Access & Administration',
     controlName: 'Global Administrator count within limit',
     description: 'Global Administrator accounts are not more than 5',
-    severity: 'critical',
+    severity: 'high',
     weight: 2,
     automatable: true,
     quickAssessment: true,
@@ -506,7 +511,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
 
       const members = data[ENTRA_ENDPOINTS.DIRECTORY_ROLE_MEMBERS(gaRole.id)]?.value || [];
       if (members.length <= 5) return { result: 'pass', evidence: `Global Admin count: ${members.length} (within limit)`, recommendation: '' };
-      return { result: 'fail', evidence: `Global Admin count: ${members.length} (exceeds limit of 5)`, recommendation: 'Reduce Global Admins to 5 or fewer', failedItems: members.map((m: any) => m.userPrincipalName || m.displayName) };
+      return { result: 'fail', evidence: `Global Admin count: ${members.length} (exceeds limit of 5)`, recommendation: 'Reduce the number of Global Administrators to the minimum required.', failedItems: members.map((m: any) => m.userPrincipalName || m.displayName) };
     },
   },
   {
@@ -529,7 +534,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Privileged Access & Administration',
     controlName: 'Cloud-native administrator accounts used',
     description: 'Admin accounts should be cloud-native (not federated)',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     quickAssessment: true,
@@ -544,7 +549,6 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         const members = data[ENTRA_ENDPOINTS.DIRECTORY_ROLE_MEMBERS(roleId)]?.value || [];
         for (const member of members) {
           totalAdmins++;
-          // Check if user is cloud-native (not federated)
           if (!member.onPremisesSyncEnabled && !member.onPremisesUserPrincipalName) {
             cloudNativeAdmins++;
           }
@@ -553,7 +557,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
 
       if (totalAdmins === 0) return { result: 'not_applicable', evidence: 'No admin accounts found', recommendation: '' };
       if (cloudNativeAdmins === totalAdmins) return { result: 'pass', evidence: `All ${totalAdmins} admin accounts are cloud-native`, recommendation: '' };
-      return { result: 'fail', evidence: `${totalAdmins - cloudNativeAdmins} of ${totalAdmins} admin accounts are federated`, recommendation: 'Use cloud-native accounts for administrators' };
+      return { result: 'fail', evidence: `${totalAdmins - cloudNativeAdmins} of ${totalAdmins} admin accounts are federated`, recommendation: 'Create dedicated cloud-native administrator accounts.' };
     },
   },
 
@@ -563,7 +567,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Access Controls & Review',
     controlName: 'Access Review for guest users configured',
     description: 'Access Review for guest users is configured',
-    severity: 'medium',
+    severity: 'critical',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.ACCESS_REVIEWS_DEFINITIONS],
@@ -572,7 +576,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         d.displayName?.toLowerCase().includes('guest') || d.description?.toLowerCase().includes('guest')
       );
       if (hasReview) return { result: 'pass', evidence: 'Guest access review configured', recommendation: '' };
-      return { result: 'fail', evidence: 'No guest access review found', recommendation: 'Create access review for guest users' };
+      return { result: 'fail', evidence: 'No guest access review found', recommendation: 'Configure Access Reviews for guest users.' };
     },
   },
   {
@@ -590,7 +594,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         d.displayName?.toLowerCase().includes('admin') || d.displayName?.toLowerCase().includes('privileged')
       );
       if (hasReview) return { result: 'pass', evidence: 'Privileged role access review configured', recommendation: '' };
-      return { result: 'fail', evidence: 'No privileged role access review found', recommendation: 'Create access review for privileged roles' };
+      return { result: 'fail', evidence: 'No privileged role access review found', recommendation: 'Configure Access Reviews for privileged roles.' };
     },
   },
   {
@@ -627,7 +631,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         return isPrivilegedRole || isGuestUser;
       });
       if (hasRecurring) return { result: 'pass', evidence: 'Recurring access review configured for privileged roles or guest users', recommendation: '' };
-      return { result: 'fail', evidence: 'No recurring access review found for privileged roles or guest users', recommendation: 'Configure recurring access reviews for privileged roles or guest users' };
+      return { result: 'fail', evidence: 'No recurring access review found for privileged roles or guest users', recommendation: 'Configure recurring Access Reviews.' };
     },
   },
   {
@@ -635,7 +639,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Access Controls & Review',
     controlName: 'Access Reviews have reminder notifications',
     description: 'Reminder notifications are enabled for access reviews',
-    severity: 'low',
+    severity: 'critical',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.ACCESS_REVIEWS_DEFINITIONS],
@@ -644,7 +648,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         d.notificationEnabled === true || d.sendReminderNotifications === true
       );
       if (hasReminder) return { result: 'pass', evidence: 'Reminder notifications enabled', recommendation: '' };
-      return { result: 'fail', evidence: 'No reminder notifications configured', recommendation: 'Enable reminder notifications' };
+      return { result: 'fail', evidence: 'No reminder notifications configured', recommendation: 'Enable reminder notifications for Access Reviews.' };
     },
   },
   {
@@ -661,7 +665,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
         d.autoApplyDecisionEnabled === true || d.autoReviewEnabled === true
       );
       if (hasAuto) return { result: 'pass', evidence: 'Auto-handling for non-responders configured', recommendation: '' };
-      return { result: 'fail', evidence: 'No auto-handling for non-responders', recommendation: 'Configure automatic actions for non-responders' };
+      return { result: 'fail', evidence: 'No auto-handling for non-responders', recommendation: 'Configure automatic actions for non-responders.' };
     },
   },
 
@@ -671,14 +675,14 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Identity Monitoring & Logging',
     controlName: 'Sign-in logs available',
     description: 'Sign-in logs are available',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.SIGN_IN_LOGS],
     evaluate: (data) => {
       const logs = data[ENTRA_ENDPOINTS.SIGN_IN_LOGS];
       if (logs && !logs.error) return { result: 'pass', evidence: 'Sign-in logs accessible', recommendation: '' };
-      return { result: 'fail', evidence: 'Sign-in logs not accessible', recommendation: 'Ensure sign-in logs are enabled' };
+      return { result: 'fail', evidence: 'Sign-in logs not accessible', recommendation: 'Enable sign-in log retention and monitoring.' };
     },
   },
   {
@@ -686,14 +690,14 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Identity Monitoring & Logging',
     controlName: 'Directory audit logs available',
     description: 'Directory audit logs are available',
-    severity: 'medium',
+    severity: 'high',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.DIRECTORY_AUDITS],
     evaluate: (data) => {
       const logs = data[ENTRA_ENDPOINTS.DIRECTORY_AUDITS];
       if (logs && !logs.error) return { result: 'pass', evidence: 'Directory audit logs accessible', recommendation: '' };
-      return { result: 'fail', evidence: 'Directory audit logs not accessible', recommendation: 'Enable directory audit logs' };
+      return { result: 'fail', evidence: 'Directory audit logs not accessible', recommendation: 'Enable directory audit logging.' };
     },
   },
   {
@@ -701,14 +705,14 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Identity Monitoring & Logging',
     controlName: 'Provisioning logs available',
     description: 'Provisioning logs are available',
-    severity: 'low',
+    severity: 'medium',
     weight: 1,
     automatable: true,
     endpoints: [ENTRA_ENDPOINTS.PROVISIONING_LOGS],
     evaluate: (data) => {
       const logs = data[ENTRA_ENDPOINTS.PROVISIONING_LOGS];
       if (logs && !logs.error) return { result: 'pass', evidence: 'Provisioning logs accessible', recommendation: '' };
-      return { result: 'fail', evidence: 'Provisioning logs not accessible', recommendation: 'Ensure provisioning logs are enabled' };
+      return { result: 'fail', evidence: 'Provisioning logs not accessible', recommendation: 'Enable provisioning logs.' };
     },
   },
   {
@@ -723,7 +727,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     evaluate: (data) => {
       const logs = data[ENTRA_ENDPOINTS.RISK_DETECTIONS];
       if (logs && !logs.error) return { result: 'pass', evidence: 'Identity Protection risk detections available', recommendation: '' };
-      return { result: 'fail', evidence: 'Identity Protection not available', recommendation: 'Enable Identity Protection' };
+      return { result: 'fail', evidence: 'Identity Protection not available', recommendation: 'Enable Microsoft Entra Identity Protection.' };
     },
   },
   // ==================== INFORMATIONAL CONTROLS ====================
@@ -733,7 +737,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of users',
     description: 'Total number of users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -749,7 +753,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of member users',
     description: 'Total number of member users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -764,7 +768,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of guest users',
     description: 'Total number of guest users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -780,7 +784,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of Microsoft 365 Groups',
     description: 'Total number of Microsoft 365 Groups in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -796,7 +800,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of Dynamic Microsoft 365 Groups',
     description: 'Total number of Dynamic Microsoft 365 Groups in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -811,7 +815,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of Device Groups',
     description: 'Total number of Device Groups in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -826,7 +830,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of licensed users',
     description: 'Total number of licensed users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -842,7 +846,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of unlicensed users',
     description: 'Total number of unlicensed users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -858,7 +862,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of active users',
     description: 'Total number of active users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -873,7 +877,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of inactive (disabled) users',
     description: 'Total number of inactive (disabled) users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -888,7 +892,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of licensed inactive users',
     description: 'Total number of licensed inactive users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -904,7 +908,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of Administrative Units',
     description: 'Total number of Administrative Units in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -920,7 +924,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of risky users',
     description: 'Total number of risky users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -936,7 +940,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of risky sign-ins',
     description: 'Total number of risky sign-ins in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -951,7 +955,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of privileged administrator accounts',
     description: 'Total number of privileged administrator accounts in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -973,7 +977,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'List of administrator roles and assigned users',
     description: 'List of administrator roles and assigned users in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -993,7 +997,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of Conditional Access policies',
     description: 'Total number of Conditional Access policies in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1009,7 +1013,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of users protected by MFA',
     description: 'Total number of users protected by MFA in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1026,7 +1030,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of users without MFA',
     description: 'Total number of users without MFA in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1043,7 +1047,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of privileged users without MFA',
     description: 'Total number of privileged users without MFA in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1067,7 +1071,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of App Registrations',
     description: 'Total number of App Registrations in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1082,7 +1086,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of Enterprise Applications',
     description: 'Total number of Enterprise Applications in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1097,7 +1101,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of Enterprise Applications using SSO',
     description: 'Total number of Enterprise Applications using SSO in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1112,7 +1116,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Total number of application credentials nearing expiration',
     description: 'Total number of application credentials nearing expiration in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1139,7 +1143,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'List of Conditional Access policies and configurations',
     description: 'List of Conditional Access policies and configurations in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1156,7 +1160,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Authentication methods configured in the tenant',
     description: 'Authentication methods configured in the tenant',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1172,7 +1176,7 @@ export const ENTRA_CONTROLS: EntraControlDefinition[] = [
     category: 'Informational',
     controlName: 'Current Microsoft Entra Identity Secure Score',
     description: 'Current Microsoft Entra Identity Secure Score',
-    severity: 'low',
+    severity: 'informational',
     weight: 0,
     automatable: true,
     informational: true,
@@ -1269,20 +1273,33 @@ export class EntraCollector {
       })),
       controls: actionableControls.map(([id, control]) => {
         const controlDef = ENTRA_CONTROLS.find(c => c.id === id);
-        return {
+        const severity = getSeverityForControl(id);
+        const score = calculateControlScore(severity, control.result);
+        const recommendation = getRecommendationForControl(id, control.result) ?? control.recommendation;
+        const output: any = {
           name: controlDef?.controlName || id,
           id,
           result: control.result,
           evidence: control.evidence,
-          recommendation: control.recommendation,
+          recommendation,
+          severity: severity.charAt(0).toUpperCase() + severity.slice(1),
+          score,
         };
+        if (control.failedItems) {
+          output.failedItems = control.failedItems;
+        }
+        return output;
       }),
       informationalControls: informationalControls.map(([id, control]) => {
         const controlDef = ENTRA_CONTROLS.find(c => c.id === id);
+        const severity = getSeverityForControl(id);
+        const score = calculateControlScore(severity, control.result);
         return {
           name: controlDef?.controlName || id,
           id,
           evidence: control.evidence,
+          severity: severity.charAt(0).toUpperCase() + severity.slice(1),
+          score,
         };
       }),
     };
@@ -1335,7 +1352,7 @@ export class EntraCollector {
       try {
         controls[control.id] = control.evaluate(rawData);
       } catch (error: any) {
-        controls[control.id] = { result: 'needs_manual_review', evidence: `Error: ${error.message}`, recommendation: 'Manual review required' };
+        controls[control.id] = { result: 'needs_manual_review', evidence: `Error: ${error.message}`, recommendation: 'Manual review required.' };
       }
     }
 
@@ -1406,7 +1423,7 @@ export class EntraCollector {
       try {
         controls[control.id] = control.evaluate(rawData);
       } catch (error: any) {
-        controls[control.id] = { result: 'needs_manual_review', evidence: `Error: ${error.message}`, recommendation: 'Manual review required' };
+        controls[control.id] = { result: 'needs_manual_review', evidence: `Error: ${error.message}`, recommendation: 'Manual review required.' };
       }
     }
 
