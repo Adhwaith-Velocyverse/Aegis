@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import { query } from '../db/connection';
 import { getAccessTokenForTenant } from './msalAuth';
 import { maskPII } from './encryption';
-import { CollectionError, AuthenticationMode } from '../types/m365';
+import { CollectionError, AuthenticationMode, AuthenticationError } from '../types/m365';
 import { GraphErrorType } from './graphHttpClient';
 
 const exec = promisify(_exec);
@@ -43,6 +43,7 @@ export interface GraphPSCommand {
 }
 
 export class GraphPowerShellService {
+  private tenantConnectionId: string;
   private tenantId: string;
   private clientId: string;
   private certificateThumbprint?: string;
@@ -52,12 +53,14 @@ export class GraphPowerShellService {
   private connectionPromise: Promise<void> | null = null;
 
   constructor(
+    tenantConnectionId: string,
     tenantId: string,
     clientId: string,
     authMode: AuthenticationMode,
     certificateThumbprint?: string,
     clientSecret?: string
   ) {
+    this.tenantConnectionId = tenantConnectionId;
     this.tenantId = tenantId;
     this.clientId = clientId;
     this.authMode = authMode;
@@ -82,19 +85,41 @@ export class GraphPowerShellService {
     let script = `Import-Module Microsoft.Graph -ErrorAction Stop\n`;
     script += `Connect-MgGraph -ClientId "${this.clientId}" -TenantId "${this.tenantId}"`;
 
-    if (this.authMode === AuthenticationMode.APPLICATION && this.certificateThumbprint) {
-      script += ` -CertificateThumbprint "${this.certificateThumbprint}"`;
+    if (this.authMode === AuthenticationMode.APPLICATION) {
+      if (this.certificateThumbprint) {
+        script += ` -CertificateThumbprint "${this.certificateThumbprint}"`;
+      } else {
+        try {
+          const accessToken = await getAccessTokenForTenant(this.tenantConnectionId);
+          script += ` -AccessToken "${accessToken}"`;
+        } catch (error: any) {
+          if (error instanceof AuthenticationError) {
+            throw error;
+          }
+          throw new AuthenticationError('AUTHENTICATION_ERROR', error?.message || 'Failed to obtain Graph PowerShell access token', true, error);
+        }
+      }
     } else if (this.authMode === AuthenticationMode.DELEGATED) {
-      const accessToken = await getAccessTokenForTenant(this.tenantId);
-      if (!accessToken) throw new Error('No access token available for delegated Graph PowerShell connection');
-      script += ` -AccessToken "${accessToken}"`;
+      try {
+        const accessToken = await getAccessTokenForTenant(this.tenantConnectionId);
+        script += ` -AccessToken "${accessToken}"`;
+      } catch (error: any) {
+        if (error instanceof AuthenticationError) {
+          throw error;
+        }
+        throw new AuthenticationError('AUTHENTICATION_ERROR', error?.message || 'Failed to obtain Graph PowerShell access token', true, error);
+      }
     } else {
-      throw new Error('Invalid Graph PowerShell authentication configuration');
+      throw new AuthenticationError('AUTHENTICATION_ERROR', 'Invalid Graph PowerShell authentication configuration');
     }
 
     const result = await this.executeScript(script);
     if (result.errors.length > 0) {
-      throw new Error(`Graph PowerShell connection failed: ${result.errors[0].message}`);
+      const message = result.errors[0].message;
+      if (message.toLowerCase().includes('permission') || message.toLowerCase().includes('authorization') || message.toLowerCase().includes('403')) {
+        throw new AuthenticationError('AUTHORIZATION_ERROR', `Graph PowerShell connection failed: ${message}`);
+      }
+      throw new AuthenticationError('COMMAND_ERROR', `Graph PowerShell connection failed: ${message}`);
     }
     this.connected = true;
   }
@@ -130,7 +155,11 @@ export class GraphPowerShellService {
 
     const result = await this.executeScript(script);
     if (result.errors.length > 0) {
-      throw new Error(`Graph PowerShell command failed: ${result.errors[0].message}`);
+      const message = result.errors[0].message;
+      if (message.toLowerCase().includes('permission') || message.toLowerCase().includes('authorization') || message.toLowerCase().includes('403')) {
+        throw new AuthenticationError('AUTHORIZATION_ERROR', `Graph PowerShell command failed: ${message}`);
+      }
+      throw new AuthenticationError('COMMAND_ERROR', `Graph PowerShell command failed: ${message}`);
     }
 
     const output = result.data;
@@ -244,8 +273,10 @@ export async function getGraphPowerShellService(tenantConnectionId: string): Pro
   const conn = connections[0] as any;
   const tenantId = conn.tenant_id;
   const clientId = conn.azure_client_id;
-  const authMode = conn.consented_scopes ? AuthenticationMode.APPLICATION : AuthenticationMode.DELEGATED;
+  const authMode = (conn.certificate_thumbprint || conn.azure_client_secret_encrypted)
+    ? AuthenticationMode.APPLICATION
+    : AuthenticationMode.DELEGATED;
   const certificateThumbprint = conn.certificate_thumbprint || undefined;
 
-  return new GraphPowerShellService(tenantId, clientId, authMode, certificateThumbprint);
+  return new GraphPowerShellService(tenantConnectionId, tenantId, clientId, authMode, certificateThumbprint);
 }

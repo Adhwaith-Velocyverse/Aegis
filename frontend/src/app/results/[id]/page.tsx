@@ -198,6 +198,8 @@ export default function ResultsPage() {
       case 'fail': return 'bg-red-100 text-red-800';
       case 'not_applicable': return 'bg-gray-100 text-gray-800';
       case 'needs_manual_review': return 'bg-yellow-100 text-yellow-800';
+      case 'error': return 'bg-orange-100 text-orange-800';
+      case 'info': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -613,6 +615,8 @@ export default function ResultsPage() {
                     <option value="all">All Results</option>
                     <option value="fail">Failed</option>
                     <option value="pass">Passed</option>
+                    <option value="error">Error</option>
+                    <option value="info">Info</option>
                     <option value="needs_manual_review">Needs Manual Review</option>
                     <option value="not_applicable">Not Applicable</option>
                   </select>

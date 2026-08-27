@@ -1,6 +1,7 @@
 import { ConfidentialClientApplication, LogLevel, AuthenticationResult } from '@azure/msal-node';
 import { query } from '../db/connection';
 import crypto from 'crypto';
+import { AuthenticationError } from '../types/m365';
 
 export function getAuthorityUrl(authority: string): string {
   // If it's already a full URL, return as-is
@@ -92,10 +93,12 @@ export async function exchangeCodeForTokens(code: string, tenantId: string, scop
   }
 }
 
-export async function getAccessTokenForTenant(tenantConnectionId: string): Promise<string | null> {
+export async function getAccessTokenForTenant(tenantConnectionId: string): Promise<string> {
   try {
     const connections = await query('SELECT * FROM tenant_connections WHERE id = ?', [tenantConnectionId]);
-    if (connections.length === 0) return null;
+    if (connections.length === 0) {
+      throw new AuthenticationError('AUTHENTICATION_ERROR', 'Tenant connection not found', true);
+    }
 
     const connection = connections[0] as any;
 
@@ -103,7 +106,6 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
     if (connection.azure_tenant_id && connection.azure_client_id && connection.azure_client_secret_encrypted) {
       const clientSecret = decryptToken(connection.azure_client_secret_encrypted);
       
-      // Create a temporary MSAL config for this tenant
       const tenantMsalConfig = {
         auth: {
           clientId: connection.azure_client_id,
@@ -118,7 +120,9 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
         scopes: ['https://graph.microsoft.com/.default'],
       });
 
-      if (!tokenResponse) return null;
+      if (!tokenResponse) {
+        throw new AuthenticationError('AUTHENTICATION_ERROR', 'Failed to acquire application access token', true);
+      }
       return tokenResponse.accessToken;
     }
 
@@ -127,27 +131,25 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
       const tokenExpiresAt = new Date(connection.token_expires_at);
       const now = new Date();
       
-      // If token is still valid (with 5 minute buffer), return cached token
       if (now < tokenExpiresAt && (tokenExpiresAt.getTime() - now.getTime()) > 5 * 60 * 1000) {
         return decryptToken(connection.access_token_encrypted);
       }
     }
 
-    // OAuth flow - use refresh token if available (refresh token rotation)
+    // OAuth flow - use refresh token if available
     if (connection.refresh_token_encrypted) {
-      // Decrypt refresh token
       const refreshToken = decryptToken(connection.refresh_token_encrypted);
 
       try {
-        // Request new access token using refresh token
         const tokenResponse = await cca.acquireTokenByRefreshToken({
           refreshToken,
           scopes: OAUTH_SCOPES,
         });
 
-        if (!tokenResponse) return null;
+        if (!tokenResponse) {
+          throw new AuthenticationError('AUTHENTICATION_ERROR', 'Refresh token did not return a new access token', true);
+        }
 
-        // Store the new tokens (refresh token rotation)
         const response = tokenResponse as any;
         const newRefreshToken = response.refreshToken || refreshToken;
         const expiresIn = response.expiresIn || 3600;
@@ -158,24 +160,30 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
       } catch (refreshError: any) {
         console.error('Refresh token rotation failed:', refreshError);
         
-        // If refresh token is invalid/expired, mark connection as needing attention
         if (refreshError.errorCode === 'bad_token' || refreshError.errorCode === 'interaction_required') {
           await query(
             'UPDATE tenant_connections SET connection_status = ? WHERE id = ?',
             ['needs_attention', tenantConnectionId]
           );
         }
-        return null;
+        
+        const message = refreshError.message || 'Refresh token rotation failed';
+        throw new AuthenticationError('AUTHENTICATION_ERROR', message, true, refreshError);
       }
     }
 
-    // No refresh token available - connection needs to be re-established
-    // This can happen if admin consent was not fully granted
-    console.warn(`No refresh token available for tenant connection ${tenantConnectionId}. Re-authentication required.`);
-    return null;
+    // No refresh token available
+    throw new AuthenticationError(
+      'AUTHENTICATION_ERROR',
+      `No refresh token available for tenant connection ${tenantConnectionId}. Re-authentication required.`,
+      true
+    );
   } catch (error) {
+    if (error instanceof AuthenticationError) {
+      throw error;
+    }
     console.error('Failed to get access token:', error);
-    return null;
+    throw new AuthenticationError('AUTHENTICATION_ERROR', error instanceof Error ? error.message : 'Failed to get access token', true, error instanceof Error ? error : undefined);
   }
 }
 

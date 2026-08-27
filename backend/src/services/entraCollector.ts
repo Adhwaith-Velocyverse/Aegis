@@ -1,5 +1,6 @@
 import { GraphHttpClient } from './graphHttpClient';
 import { getAccessTokenForTenant } from './msalAuth';
+import { AuthenticationError } from '../types/m365';
 import fs from 'fs';
 import path from 'path';
 
@@ -1423,7 +1424,15 @@ export class EntraCollector {
 }
 
 export async function createEntraCollector(tenantConnectionId: string): Promise<EntraCollector | null> {
-  const accessToken = await getAccessTokenForTenant(tenantConnectionId);
-  if (!accessToken) return null;
-  return new EntraCollector(tenantConnectionId, accessToken);
+  try {
+    const accessToken = await getAccessTokenForTenant(tenantConnectionId);
+    return new EntraCollector(tenantConnectionId, accessToken);
+  } catch (error: any) {
+    if (error instanceof AuthenticationError) {
+      console.error(`Entra authentication failed for ${tenantConnectionId}: ${error.message}`);
+    } else {
+      console.error(`Failed to get access token for Entra collector ${tenantConnectionId}:`, error);
+    }
+    return null;
+  }
 }

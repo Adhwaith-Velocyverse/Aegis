@@ -1,0 +1,8 @@
+{
+  "endpoint": "/administrativeUnits",
+  "timestamp": "2026-08-27T11:56:29.482Z",
+  "status": "error",
+  "data": {
+    "error": "Request failed with status code 400"
+  }
+}

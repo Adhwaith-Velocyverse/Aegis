@@ -1,0 +1,20 @@
+{
+  "endpoint": "/users?$filter=userType eq 'Guest'&$count=true",
+  "timestamp": "2026-08-27T15:12:29.787Z",
+  "status": "success",
+  "data": [
+    {
+      "businessPhones": [],
+      "displayName": "kennethrojasarthur",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": "kennethrojasarthur@gmail.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "kennethrojasarthur_gmail.com#EXT#@velocyversetest01.onmicrosoft.com",
+      "id": "95894590-2a1a-4d5a-9663-66cd1b5687cb"
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import { GraphPowerShellService, getGraphPowerShellService } from './graphPowerS
 import { ExchangeOnlineService, getExchangeOnlineService } from './exchangeOnlineService';
 import { TenantValidator, PermissionValidator, ConnectionHealthService } from './connectionValidator';
 import { DataNormalizationService } from './dataNormalizationService';
-import { M365ConnectionState, AuthenticationMode, HealthCheckResult, ConnectionMetadata, CollectionError } from '../types/m365';
+import { M365ConnectionState, AuthenticationMode, AuthenticationError, HealthCheckResult, ConnectionMetadata, CollectionError } from '../types/m365';
 import { auditLog } from '../middleware/audit';
 
 export class Microsoft365ConnectionManager {
@@ -51,7 +51,9 @@ export class Microsoft365ConnectionManager {
     this.tenantId = conn.tenant_id;
     this.tenantName = conn.tenant_name;
     this.organizationId = conn.organization_id;
-    this.authMode = conn.consented_scopes ? AuthenticationMode.APPLICATION : AuthenticationMode.DELEGATED;
+    this.authMode = (conn.certificate_thumbprint || conn.azure_client_secret_encrypted)
+      ? AuthenticationMode.APPLICATION
+      : AuthenticationMode.DELEGATED;
 
     if (this.authMode === AuthenticationMode.APPLICATION) {
       if (!conn.azure_client_id || !conn.azure_tenant_id) {
@@ -59,10 +61,6 @@ export class Microsoft365ConnectionManager {
       }
       if (!conn.certificate_thumbprint && !conn.azure_client_secret_encrypted) {
         throw new Error('Application connection requires either certificate_thumbprint or client_secret');
-      }
-    } else {
-      if (!conn.azure_client_id || !conn.azure_tenant_id || !conn.azure_client_secret_encrypted) {
-        throw new Error('Delegated connection requires azure_client_id, azure_tenant_id, and client_secret');
       }
     }
 
@@ -121,7 +119,16 @@ export class Microsoft365ConnectionManager {
   }
 
   async getAccessToken(): Promise<string | null> {
-    return getAccessTokenForTenant(this.tenantConnectionId);
+    try {
+      return await getAccessTokenForTenant(this.tenantConnectionId);
+    } catch (error: any) {
+      if (error instanceof AuthenticationError) {
+        console.error(`M365 authentication failed for ${this.tenantConnectionId}: ${error.message}`);
+      } else {
+        console.error(`Failed to get access token for M365 connection ${this.tenantConnectionId}:`, error);
+      }
+      return null;
+    }
   }
 
   getGraphClient(): GraphHttpClient | null {

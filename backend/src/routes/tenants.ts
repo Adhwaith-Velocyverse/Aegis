@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { getAccessToken } from '../services/graphConnector';
 import { auditLog } from '../middleware/audit';
 import { Microsoft365ConnectionManager, getConnectionManager, clearConnectionManagerCache } from '../services/m365ConnectionManager';
-import { M365ConnectionState } from '../types/m365';
+import { M365ConnectionState, AuthenticationError } from '../types/m365';
 
 // Module-to-scope mapping per Section 16.2 (verified)
 export const MODULE_SCOPE_MAP: Record<string, { scopes: string[]; connectorType: 'graph' | 'powershell' }> = {
@@ -726,7 +726,19 @@ router.post('/:id/health-check', authenticate, async (req: AuthRequest, res) => 
     const connection = connections[0] as any;
 
     // Try to get an access token to verify the connection
-    const accessToken = await getAccessTokenForTenant(connectionId);
+    let accessToken;
+    try {
+      accessToken = await getAccessTokenForTenant(connectionId);
+    } catch (error: any) {
+      if (error instanceof AuthenticationError) {
+        await query(
+          'UPDATE tenant_connections SET connection_status = ? WHERE id = ?',
+          ['needs_attention', connectionId]
+        );
+        return res.json({ success: true, data: { status: 'needs_attention', lastChecked: new Date(), reason: error.message } });
+      }
+      throw error;
+    }
 
     if (accessToken) {
       // Update health check timestamp and status

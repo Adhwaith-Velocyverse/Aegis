@@ -84,11 +84,7 @@ export async function calculateAssessmentScore(assessmentId: string): Promise<Sc
           moduleName,
           severity: f.severity || 'medium',
         });
-      } else if (f.result === 'not_applicable') {
-        moduleNA++;
-        notApplicableCount++;
-      } else if (f.result === 'needs_manual_review') {
-        // Count needs_manual_review as not applicable for scoring
+      } else if (f.result === 'not_applicable' || f.result === 'needs_manual_review' || f.result === 'error' || f.result === 'info') {
         moduleNA++;
         notApplicableCount++;
       }

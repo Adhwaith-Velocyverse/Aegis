@@ -436,6 +436,18 @@ async function migrate() {
     }
   }
 
+  // Update findings result ENUM to include error and info statuses for Email module
+  try {
+    await query("ALTER TABLE findings MODIFY COLUMN result ENUM('pass', 'fail', 'not_applicable', 'needs_manual_review', 'error', 'info') NOT NULL");
+    console.log('Updated findings result ENUM to include error and info statuses');
+  } catch (error: any) {
+    if (error.message?.includes('Duplicate column name') || error.message?.includes('Unknown column')) {
+      // ENUM already updated or table doesn't exist yet
+    } else {
+      console.error('Failed to update findings ENUM:', error.message);
+    }
+  }
+
   console.log('Migrations completed successfully');
 }
 

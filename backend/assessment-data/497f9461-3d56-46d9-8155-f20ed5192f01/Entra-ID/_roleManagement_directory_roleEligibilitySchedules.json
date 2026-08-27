@@ -1,0 +1,70 @@
+{
+  "endpoint": "/roleManagement/directory/roleEligibilitySchedules",
+  "timestamp": "2026-08-27T13:55:07.854Z",
+  "status": "success",
+  "data": [
+    {
+      "id": "1ee4166e-5120-4315-ace8-5054827083e1",
+      "principalId": "4203b7e6-368f-4137-a842-14b9b78bf1fd",
+      "roleDefinitionId": "62e90394-69f5-4237-9190-012177145e10",
+      "directoryScopeId": "/",
+      "appScopeId": null,
+      "createdUsing": "1ee4166e-5120-4315-ace8-5054827083e1",
+      "createdDateTime": "2026-08-25T11:39:27.14Z",
+      "modifiedDateTime": "0001-01-01T08:00:00Z",
+      "status": "Provisioned",
+      "memberType": "Direct",
+      "scheduleInfo": {
+        "startDateTime": "2026-08-25T11:39:27.14Z",
+        "recurrence": null,
+        "expiration": {
+          "type": "noExpiration",
+          "endDateTime": null,
+          "duration": null
+        }
+      }
+    },
+    {
+      "id": "af934581-fc57-4f42-b366-3336261c40a9",
+      "principalId": "4203b7e6-368f-4137-a842-14b9b78bf1fd",
+      "roleDefinitionId": "9b895d92-2cd3-44c7-9d02-a6ac2d5ea5c3",
+      "directoryScopeId": "/",
+      "appScopeId": null,
+      "createdUsing": "af934581-fc57-4f42-b366-3336261c40a9",
+      "createdDateTime": "2026-08-25T07:25:04.71Z",
+      "modifiedDateTime": "0001-01-01T08:00:00Z",
+      "status": "Provisioned",
+      "memberType": "Direct",
+      "scheduleInfo": {
+        "startDateTime": "2026-08-25T07:25:04.71Z",
+        "recurrence": null,
+        "expiration": {
+          "type": "noExpiration",
+          "endDateTime": null,
+          "duration": null
+        }
+      }
+    },
+    {
+      "id": "8664ec55-aba0-474a-99e8-de8564758a34",
+      "principalId": "13b918dd-7bea-4b60-8255-5c8468afb7f4",
+      "roleDefinitionId": "e8611ab8-c189-46e8-94e1-60213ab1f814",
+      "directoryScopeId": "/",
+      "appScopeId": null,
+      "createdUsing": "8664ec55-aba0-474a-99e8-de8564758a34",
+      "createdDateTime": "2026-05-25T07:36:07.227Z",
+      "modifiedDateTime": "0001-01-01T08:00:00Z",
+      "status": "Provisioned",
+      "memberType": "Direct",
+      "scheduleInfo": {
+        "startDateTime": "2026-05-25T07:36:07.227Z",
+        "recurrence": null,
+        "expiration": {
+          "type": "noExpiration",
+          "endDateTime": null,
+          "duration": null
+        }
+      }
+    }
+  ]
+}

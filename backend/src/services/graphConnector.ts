@@ -1,6 +1,7 @@
 import { query } from '../db/connection';
 import { getAccessTokenForTenant } from './msalAuth';
 import { GraphHttpClient } from './graphHttpClient';
+import { AuthenticationError } from '../types/m365';
 
 const GRAPH_BASE_URL = 'https://graph.microsoft.com/v1.0';
 
@@ -363,5 +364,14 @@ export class GraphConnector {
 }
 
 export async function getAccessToken(tenantConnectionId: string): Promise<string | null> {
-  return getAccessTokenForTenant(tenantConnectionId);
+  try {
+    return await getAccessTokenForTenant(tenantConnectionId);
+  } catch (error: any) {
+    if (error instanceof AuthenticationError) {
+      console.error(`Graph authentication failed for ${tenantConnectionId}: ${error.message}`);
+    } else {
+      console.error(`Failed to get access token for Graph connector ${tenantConnectionId}:`, error);
+    }
+    return null;
+  }
 }

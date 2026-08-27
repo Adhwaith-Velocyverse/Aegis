@@ -1,0 +1,22 @@
+[
+  {
+    "endpoint": "/policies/identitySecurityDefaultsEnforcementPolicy",
+    "error": "Request failed with status code 500",
+    "statusCode": 500
+  },
+  {
+    "endpoint": "/policies/roleManagementPolicies",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/administrativeUnits",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/security/secureScores?$top=1",
+    "error": "Insufficient permissions to access this resource",
+    "statusCode": 403
+  }
+]

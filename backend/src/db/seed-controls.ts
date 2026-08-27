@@ -66,27 +66,8 @@ const CONTROLS = [
   { moduleName: 'Purview', controlName: 'Information barrier policies are reviewed', description: 'Information barrier policies should be reviewed regularly', weight: 1, severity: 'low', frameworkRefs: ['CIS 8.6'], automatable: false },
   { moduleName: 'Purview', controlName: 'Audit log retention is configured', description: 'Audit log retention should be configured for compliance', weight: 1, severity: 'medium', frameworkRefs: ['CIS 8.8'], automatable: true },
 
-  // ==================== EMAIL (20 controls) ====================
-  { moduleName: 'Email', controlName: 'Anti-phishing policy is enabled', description: 'Anti-phishing policies should be configured and enabled', weight: 2, severity: 'critical', frameworkRefs: ['CIS 7.1'], automatable: true },
-  { moduleName: 'Email', controlName: 'Anti-malware policy is enabled', description: 'Anti-malware policies should be configured and enabled', weight: 2, severity: 'critical', frameworkRefs: ['CIS 7.2'], automatable: true },
-  { moduleName: 'Email', controlName: 'Safe Links is enabled', description: 'Safe Links should be enabled for URL protection', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.3'], automatable: true },
-  { moduleName: 'Email', controlName: 'Safe Attachments is enabled', description: 'Safe Attachments should be enabled for file protection', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.4'], automatable: true },
-  { moduleName: 'Email', controlName: 'External email forwarding is restricted', description: 'External email forwarding rules should be reviewed and restricted', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.5'], automatable: true },
-  { moduleName: 'Email', controlName: 'Mailbox audit logging is enabled', description: 'Mailbox audit logging should be enabled for all mailboxes', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.6'], automatable: true },
-  { moduleName: 'Email', controlName: 'Anti-spam policies are configured', description: 'Anti-spam policies should be configured and enabled', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.7'], automatable: true },
-  { moduleName: 'Email', controlName: 'Connection filtering is enabled', description: 'Connection filtering should be enabled for IP blocking', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.8'], automatable: true },
-  { moduleName: 'Email', controlName: 'Outbound spam policies are configured', description: 'Outbound spam policies should be configured', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.9'], automatable: true },
-  { moduleName: 'Email', controlName: 'Email authentication is configured', description: 'SPF, DKIM, and DMARC should be configured', weight: 2, severity: 'high', frameworkRefs: ['CIS 7.10'], automatable: true },
-  { moduleName: 'Email', controlName: 'Phishing threshold is configured', description: 'Phishing threshold should be configured appropriately', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.1'], automatable: true },
-  { moduleName: 'Email', controlName: 'Spoof intelligence is enabled', description: 'Spoof intelligence should be enabled and reviewed', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.1'], automatable: true },
-  { moduleName: 'Email', controlName: 'Quarantine policies are configured', description: 'Quarantine policies should be configured for suspicious emails', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.1'], automatable: true },
-  { moduleName: 'Email', controlName: 'Safe Attachments policies cover all users', description: 'Safe Attachments policies should cover all users', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.4'], automatable: true },
-  { moduleName: 'Email', controlName: 'Anti-malware policies cover all users', description: 'Anti-malware policies should cover all users', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.2'], automatable: true },
-  { moduleName: 'Email', controlName: 'Mail flow rules are reviewed', description: 'Mail flow rules should be reviewed regularly', weight: 1, severity: 'low', frameworkRefs: ['CIS 7.5'], automatable: true },
-  { moduleName: 'Email', controlName: 'Journaling is configured', description: 'Journaling should be configured for compliance', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.6'], automatable: true },
-  { moduleName: 'Email', controlName: 'Message trace is enabled', description: 'Message trace should be enabled for troubleshooting', weight: 1, severity: 'low', frameworkRefs: ['CIS 7.6'], automatable: true },
-  { moduleName: 'Email', controlName: 'Anti-spam policies are reviewed', description: 'Anti-spam policies should be reviewed regularly', weight: 1, severity: 'low', frameworkRefs: ['CIS 7.7'], automatable: true },
-  { moduleName: 'Email', controlName: 'Email encryption is configured', description: 'Email encryption (OME) should be configured for sensitive data', weight: 1, severity: 'medium', frameworkRefs: ['CIS 7.5'], automatable: true },
+  // ==================== EMAIL CONTROLS ====================
+  // Email controls are now seeded separately in seed-email-controls.ts
 
   // ==================== INTUNE (20 controls) ====================
   { moduleName: 'Intune', controlName: 'Device encryption is enforced', description: 'BitLocker or equivalent encryption should be enforced via compliance policy', weight: 2, severity: 'high', frameworkRefs: ['CIS 9.1'], automatable: true },

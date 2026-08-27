@@ -5,7 +5,7 @@ export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer';
 export type AssessmentType = 'trial' | 'quick' | 'detailed';
 export type AssessmentStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 export type ConnectionStatus = 'connected' | 'needs_attention' | 'disconnected';
-export type ControlResult = 'pass' | 'fail' | 'not_applicable' | 'needs_manual_review';
+export type ControlResult = 'pass' | 'fail' | 'not_applicable' | 'needs_manual_review' | 'error' | 'info';
 export type FindingSource = 'automated' | 'manual';
 export type DetailedRequestStatus = 'unassigned' | 'assigned' | 'in_review' | 'awaiting_client' | 'completed';
 

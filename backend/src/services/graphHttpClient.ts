@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { query } from '../db/connection';
 import { getAccessTokenForTenant } from './msalAuth';
+import { AuthenticationError } from '../types/m365';
 import { maskPII } from './encryption';
 
 const GRAPH_BASE_URL_V1 = 'https://graph.microsoft.com/v1.0';
@@ -288,16 +289,23 @@ export class GraphHttpClient {
 }
 
 export async function getGraphClient(tenantConnectionId: string): Promise<GraphHttpClient | null> {
-  const accessToken = await getAccessTokenForTenant(tenantConnectionId);
-  if (!accessToken) return null;
+  try {
+    const accessToken = await getAccessTokenForTenant(tenantConnectionId);
+    const connections = await query(
+      'SELECT tenant_id FROM tenant_connections WHERE id = ?',
+      [tenantConnectionId]
+    );
+    if (connections.length === 0) return null;
 
-  const connections = await query(
-    'SELECT tenant_id FROM tenant_connections WHERE id = ?',
-    [tenantConnectionId]
-  );
-  if (connections.length === 0) return null;
-
-  return new GraphHttpClient(accessToken, (connections[0] as any).tenant_id);
+    return new GraphHttpClient(accessToken, (connections[0] as any).tenant_id);
+  } catch (error: any) {
+    if (error instanceof AuthenticationError) {
+      console.error(`Graph authentication failed for ${tenantConnectionId}: ${error.message}`);
+    } else {
+      console.error(`Failed to get access token for Graph client ${tenantConnectionId}:`, error);
+    }
+    return null;
+  }
 }
 
 export function maskToken(token: string): string {

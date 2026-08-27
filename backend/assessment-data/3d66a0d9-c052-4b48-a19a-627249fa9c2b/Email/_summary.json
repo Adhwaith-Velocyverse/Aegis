@@ -1,0 +1,27 @@
+{
+  "assessmentId": "3d66a0d9-c052-4b48-a19a-627249fa9c2b",
+  "moduleName": "Email",
+  "collectedAt": "2026-08-27T15:12:03.287Z",
+  "status": "failed",
+  "totalCommands": 0,
+  "successfulCommands": 0,
+  "failedCommands": 0,
+  "errors": [
+    {
+      "command": "Connect-ExchangeOnline",
+      "type": "auth_error",
+      "message": "Exchange Online connection failed: Import-Module : The specified module 'ExchangeOnlineManagement' was not loaded because no valid module file was found \r\nin any module directory.\r\nAt line:1 char:1\r\n+ Import-Module ExchangeOnlineManagement -ErrorAction Stop\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ResourceUnavailable: (ExchangeOnlineManagement:String) [Import-Module], FileNotFoundExce \r\n   ption\r\n    + FullyQualifiedErrorId : Modules_ModuleNotFound,Microsoft.PowerShell.Commands.Im",
+      "retryable": false
+    }
+  ],
+  "metrics": {
+    "totalMailboxes": 0,
+    "userMailboxes": 0,
+    "sharedMailboxes": 0,
+    "resourceMailboxes": 0,
+    "distributionGroups": 0,
+    "dynamicDistributionGroups": 0,
+    "m365Groups": 0,
+    "mailEnabledSecurityGroups": 0
+  }
+}

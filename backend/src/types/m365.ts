@@ -17,6 +17,18 @@ export enum AuthenticationMode {
   APPLICATION = 'APPLICATION',
 }
 
+export class AuthenticationError extends Error {
+  constructor(
+    public type: 'AUTHENTICATION_ERROR' | 'AUTHORIZATION_ERROR' | 'COMMAND_ERROR',
+    message: string,
+    public requiresReauthentication: boolean = false,
+    public cause?: Error
+  ) {
+    super(message);
+    this.name = 'AuthenticationError';
+  }
+}
+
 export interface ConnectionMetadata {
   connectionId: string;
   tenantId: string;
