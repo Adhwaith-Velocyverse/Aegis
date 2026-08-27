@@ -1,0 +1,29 @@
+{
+  "endpoint": "/identityProtection/riskDetections?$top=1",
+  "timestamp": "2026-08-26T13:38:42.721Z",
+  "status": "success",
+  "data": [
+    {
+      "id": "a5e7255a10c7803b0d227390432b3633f7fa54c6d4022dbc400895f1b54c1a79",
+      "requestId": "84499ee1-e092-4af6-a2b6-9bc78074c500",
+      "correlationId": "01a0187f-4cb8-7764-b4a4-b2bc518571db",
+      "riskEventType": "unlikelyTravel",
+      "riskState": "remediated",
+      "riskLevel": "low",
+      "riskDetail": "userPassedMFADrivenByRiskBasedPolicy",
+      "source": "IdentityProtection",
+      "detectionTimingType": "realtime",
+      "activity": "signin",
+      "tokenIssuerType": "AzureAD",
+      "ipAddress": "2401:4900:882f:2ce9:8563:350a:bc94:4c64",
+      "activityDateTime": "2026-08-19T05:31:59.1067917Z",
+      "detectedDateTime": "2026-08-19T05:31:59.1067917Z",
+      "lastUpdatedDateTime": "2026-08-19T05:34:29.4811435Z",
+      "userId": "8e2e2454-df75-4fd8-93cd-6218752e326d",
+      "userDisplayName": "Vignesh",
+      "userPrincipalName": "Vignesh@velocyversetest01.onmicrosoft.com",
+      "additionalInfo": "",
+      "location": null
+    }
+  ]
+}

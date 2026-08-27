@@ -1,0 +1,8 @@
+{
+  "endpoint": "/identitySecureScores?$top=1",
+  "timestamp": "2026-08-26T13:48:59.750Z",
+  "status": "error",
+  "data": {
+    "error": "Request failed with status code 400"
+  }
+}

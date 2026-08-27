@@ -1,0 +1,37 @@
+[
+  {
+    "endpoint": "/policies/roleManagementPolicies",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/groups?$filter=groupTypes/any(c:c eq 'Unified') and membershipRule ne null&$count=true",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/users?$filter=assignedLicenses/%24count ne 0&$count=true",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/users?$filter=assignedLicenses/%24count eq 0&$count=true",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/administrativeUnits?$count=true",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/servicePrincipals?$filter=ssoUrl ne null&$count=true",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/secureScores?$top=1",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  }
+]

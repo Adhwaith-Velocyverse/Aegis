@@ -1,0 +1,8 @@
+{
+  "endpoint": "/secureScores?$top=1",
+  "timestamp": "2026-08-26T13:38:42.766Z",
+  "status": "error",
+  "data": {
+    "error": "Request failed with status code 400"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "endpoint": "/users?$filter=assignedLicenses/%24count eq 0&$count=true",
+  "timestamp": "2026-08-26T13:37:51.648Z",
+  "status": "error",
+  "data": {
+    "error": "Request failed with status code 400"
+  }
+}

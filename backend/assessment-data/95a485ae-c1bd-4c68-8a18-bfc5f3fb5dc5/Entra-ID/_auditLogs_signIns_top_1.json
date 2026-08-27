@@ -1,0 +1,70 @@
+{
+  "endpoint": "/auditLogs/signIns?$top=1",
+  "timestamp": "2026-08-26T09:10:15.442Z",
+  "status": "success",
+  "data": [
+    {
+      "id": "c0670eef-9149-4ce0-84d1-72a0dbf7a100",
+      "createdDateTime": "2026-08-26T08:47:20Z",
+      "userDisplayName": "Kenneth",
+      "userPrincipalName": "kenneth@velocyversetest01.onmicrosoft.com",
+      "userId": "13b918dd-7bea-4b60-8255-5c8468afb7f4",
+      "appId": "71adb3cf-fd7a-47be-9504-bcbef6bfce85",
+      "appDisplayName": "Aegis",
+      "ipAddress": "2406:7400:ce:1564:e510:8790:dd7a:6bd4",
+      "clientAppUsed": "Browser",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0 OS/10.0.26200",
+      "correlationId": "96c9068d-4841-4baf-b050-d20e8fab17a1",
+      "conditionalAccessStatus": "notApplied",
+      "isInteractive": true,
+      "riskDetail": "none",
+      "riskLevelAggregated": "none",
+      "riskLevelDuringSignIn": "none",
+      "riskState": "none",
+      "riskEventTypes": [],
+      "riskEventTypes_v2": [],
+      "resourceDisplayName": "Microsoft Graph",
+      "resourceId": "00000003-0000-0000-c000-000000000000",
+      "resourceTenantId": "6a9d0bfa-5195-4973-bb03-8372724b6fc7",
+      "homeTenantId": "6a9d0bfa-5195-4973-bb03-8372724b6fc7",
+      "servicePrincipalName": null,
+      "servicePrincipalId": "35a9b544-394f-4b4c-8724-25a4912dec86",
+      "authenticationAppDeviceDetails": null,
+      "status": {
+        "errorCode": 0,
+        "failureReason": "Other.",
+        "additionalDetails": "MFA requirement satisfied by claim in the token"
+      },
+      "deviceDetail": {
+        "deviceId": "",
+        "displayName": "",
+        "operatingSystem": "Windows10",
+        "browser": "Edge 151.0.0",
+        "isCompliant": false,
+        "isManaged": false,
+        "trustType": null
+      },
+      "location": {
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "countryOrRegion": "IN",
+        "geoCoordinates": {
+          "altitude": null,
+          "latitude": 13.0524,
+          "longitude": 80.2508
+        }
+      },
+      "appliedConditionalAccessPolicies": [
+        {
+          "id": "528a741c-a87b-456a-a335-00e58bee7b37",
+          "displayName": "Project Testing - Required MFA",
+          "enforcedGrantControls": [
+            "Mfa"
+          ],
+          "enforcedSessionControls": [],
+          "result": "notApplied"
+        }
+      ]
+    }
+  ]
+}

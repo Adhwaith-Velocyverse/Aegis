@@ -1,0 +1,372 @@
+{
+  "assessmentId": "ef8b12ec-76f7-41f0-9df5-8f12e494ed7b",
+  "moduleName": "Entra-ID",
+  "collectedAt": "2026-08-26T08:48:20.681Z",
+  "status": "partial",
+  "totalEndpoints": 30,
+  "successfulEndpoints": 29,
+  "failedEndpoints": 1,
+  "totalControls": 34,
+  "controlsPass": 13,
+  "controlsFail": 21,
+  "controlsManualReview": 0,
+  "controlsNotApplicable": 0,
+  "endpoints": [
+    {
+      "endpoint": "/policies/identitySecurityDefaultsEnforcementPolicy",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identity/conditionalAccess/policies",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/policies/authenticationMethodsPolicy",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identity/conditionalAccess/namedLocations",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/roleManagement/directory/roleEligibilitySchedules",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/roleManagement/directory/roleAssignmentSchedules",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/policies/roleManagementPolicies",
+      "status": "error",
+      "error": "Request failed with status code 400"
+    },
+    {
+      "endpoint": "/users?$filter=userType eq 'Guest'",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identityGovernance/accessReviews/definitions",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/auditLogs/signIns?$top=1",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/auditLogs/directoryAudits?$top=1",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/auditLogs/provisioning?$top=1",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identityProtection/riskDetections?$top=1",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/077eb471-236e-4fb3-96a0-c6a7b8846e18/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/09390a81-e173-4dac-b39f-b3176ee928ed/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/0c730223-bcd3-46ea-a189-000fd7a67f77/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/0fc424a9-73ff-41cf-90dc-2c6215a66b85/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/1d945866-246f-461d-a222-f9577ae3fb19/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/315fae71-f55b-4df1-b2d8-3c5d1241bff6/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/4e06b030-b159-4dba-9c7b-a3b111c406a8/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/61bd59ee-9d0d-4ce1-8a7e-32819f4cb211/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/63d0ee2e-adc2-4e57-a3bc-f371d8e8dfc1/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/726c3909-7964-4e9a-a51a-8af10ce0a595/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/a9228714-3a70-423b-a6e3-da3951675b74/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/c11c78ec-ee37-49d9-8f96-133f4f0d3241/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/d00f3f45-118e-4628-ad3d-5a44df5377ab/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/d43e2ae6-cb6b-4f3d-9c28-b6e09a0d91ba/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/de6b6017-ce82-40d9-b50a-2bda26277147/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/e3a69f3a-e3ef-4e0a-bf68-7c4df2b578e8/members",
+      "status": "success",
+      "error": null
+    }
+  ],
+  "controls": [
+    {
+      "id": "entra-authmfa-mfa-enforced-for-all-users",
+      "result": "fail",
+      "evidence": "MFA not enforced for all users",
+      "recommendation": "Enable Security Defaults or CA policy for MFA"
+    },
+    {
+      "id": "entra-authmfa-mfa-enforced-for-privileged-users",
+      "result": "fail",
+      "evidence": "No CA policy requires MFA for privileged users",
+      "recommendation": "Create CA policy requiring MFA for privileged roles"
+    },
+    {
+      "id": "entra-authmfa-legacy-authentication-blocked",
+      "result": "fail",
+      "evidence": "No policy blocks legacy authentication",
+      "recommendation": "Enable Security Defaults or CA policy to block legacy auth"
+    },
+    {
+      "id": "entra-authmfa-microsoft-authenticator-enabled",
+      "result": "fail",
+      "evidence": "Microsoft Authenticator not enabled",
+      "recommendation": "Enable Microsoft Authenticator"
+    },
+    {
+      "id": "entra-authmfa-fido2-security-keys-enabled",
+      "result": "fail",
+      "evidence": "FIDO2 not enabled",
+      "recommendation": "Enable FIDO2 security keys"
+    },
+    {
+      "id": "entra-authmfa-passkeys-enabled",
+      "result": "fail",
+      "evidence": "Passkeys not enabled",
+      "recommendation": "Enable Passkeys for passwordless auth"
+    },
+    {
+      "id": "entra-authmfa-temporary-access-pass-enabled",
+      "result": "fail",
+      "evidence": "TAP not enabled",
+      "recommendation": "Enable Temporary Access Pass"
+    },
+    {
+      "id": "entra-authmfa-sms-authentication-disabled",
+      "result": "pass",
+      "evidence": "SMS auth disabled",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-authmfa-voice-call-authentication-disabled",
+      "result": "pass",
+      "evidence": "Voice auth disabled",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-authmfa-sspr-enabled",
+      "result": "fail",
+      "evidence": "SSPR not enabled",
+      "recommendation": "Enable SSPR"
+    },
+    {
+      "id": "entra-authmfa-smart-lockout-configured",
+      "result": "fail",
+      "evidence": "Smart lockout not configured",
+      "recommendation": "Configure smart lockout threshold"
+    },
+    {
+      "id": "entra-conditionalaccess-ca-policies-configured",
+      "result": "pass",
+      "evidence": "1 CA policies enabled",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-conditionalaccess-ca-requires-mfa-for-admins",
+      "result": "fail",
+      "evidence": "No CA policy requires MFA for admins",
+      "recommendation": "Create CA policy requiring MFA for privileged roles"
+    },
+    {
+      "id": "entra-conditionalaccess-ca-for-high-risk-sign-ins",
+      "result": "fail",
+      "evidence": "No CA policy for high-risk sign-ins",
+      "recommendation": "Create CA policy for high-risk sign-ins"
+    },
+    {
+      "id": "entra-conditionalaccess-high-user-risk-requires-password-reset",
+      "result": "fail",
+      "evidence": "No CA policy for high user risk",
+      "recommendation": "Create CA policy for high user risk"
+    },
+    {
+      "id": "entra-conditionalaccess-named-locations-configured",
+      "result": "pass",
+      "evidence": "1 named locations configured",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-conditionalaccess-access-from-high-risk-locations-blocked",
+      "result": "fail",
+      "evidence": "No CA policy restricts locations",
+      "recommendation": "Create CA policy to block high-risk locations"
+    },
+    {
+      "id": "entra-conditionalaccess-sign-in-frequency-configured",
+      "result": "fail",
+      "evidence": "Sign-in frequency not configured",
+      "recommendation": "Configure sign-in frequency in CA"
+    },
+    {
+      "id": "entra-conditionalaccess-token-protection-enabled",
+      "result": "fail",
+      "evidence": "Token protection not enabled",
+      "recommendation": "Enable token protection in CA"
+    },
+    {
+      "id": "entra-pim-pim-enabled",
+      "result": "pass",
+      "evidence": "PIM configured (3 eligible, 30 assigned)",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-pim-jit-activation-configured",
+      "result": "pass",
+      "evidence": "3 eligible role assignments",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-pim-pim-activation-requires-mfa",
+      "result": "fail",
+      "evidence": "MFA not required during PIM activation",
+      "recommendation": "Configure PIM to require MFA"
+    },
+    {
+      "id": "entra-privilegedaccess-global-admin-count-within-limit",
+      "result": "pass",
+      "evidence": "Global Admin count: 4 (within limit)",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-privilegedaccess-guest-accounts-least-privilege",
+      "result": "pass",
+      "evidence": "1 guest users have no admin roles",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-privilegedaccess-cloud-native-admin-accounts",
+      "result": "pass",
+      "evidence": "All 26 admin accounts are cloud-native",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-accessreviews-guest-access-review-configured",
+      "result": "fail",
+      "evidence": "No guest access review found",
+      "recommendation": "Create access review for guest users"
+    },
+    {
+      "id": "entra-accessreviews-privileged-role-access-review-configured",
+      "result": "fail",
+      "evidence": "No privileged role access review found",
+      "recommendation": "Create access review for privileged roles"
+    },
+    {
+      "id": "entra-accessreviews-recurring-access-review-schedule",
+      "result": "fail",
+      "evidence": "No recurring access review found",
+      "recommendation": "Configure recurring access reviews"
+    },
+    {
+      "id": "entra-accessreviews-reminder-notifications-enabled",
+      "result": "fail",
+      "evidence": "No reminder notifications configured",
+      "recommendation": "Enable reminder notifications"
+    },
+    {
+      "id": "entra-accessreviews-non-responders-auto-handled",
+      "result": "fail",
+      "evidence": "No auto-handling for non-responders",
+      "recommendation": "Configure automatic actions for non-responders"
+    },
+    {
+      "id": "entra-monitoring-sign-in-logs-available",
+      "result": "pass",
+      "evidence": "Sign-in logs accessible",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-monitoring-directory-audit-logs-available",
+      "result": "pass",
+      "evidence": "Directory audit logs accessible",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-monitoring-provisioning-logs-available",
+      "result": "pass",
+      "evidence": "Provisioning logs accessible",
+      "recommendation": ""
+    },
+    {
+      "id": "entra-monitoring-identity-protection-available",
+      "result": "pass",
+      "evidence": "Identity Protection risk detections available",
+      "recommendation": ""
+    }
+  ]
+}

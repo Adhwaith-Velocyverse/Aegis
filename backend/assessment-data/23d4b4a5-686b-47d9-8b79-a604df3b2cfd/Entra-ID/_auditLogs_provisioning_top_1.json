@@ -1,0 +1,6 @@
+{
+  "endpoint": "/auditLogs/provisioning?$top=1",
+  "timestamp": "2026-08-26T09:09:48.075Z",
+  "status": "success",
+  "data": []
+}

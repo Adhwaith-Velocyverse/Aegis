@@ -1,0 +1,8 @@
+{
+  "endpoint": "/groups?$filter=groupTypes/any(c:c eq 'Unified') and membershipRule ne null&$count=true",
+  "timestamp": "2026-08-26T13:37:51.643Z",
+  "status": "error",
+  "data": {
+    "error": "Request failed with status code 400"
+  }
+}

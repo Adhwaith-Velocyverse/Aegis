@@ -1,0 +1,33 @@
+{
+  "endpoint": "/users?$filter=accountEnabled eq false&$count=true",
+  "timestamp": "2026-08-27T06:14:40.573Z",
+  "status": "success",
+  "data": [
+    {
+      "businessPhones": [],
+      "displayName": "TestShare",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": "TestShare@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "TestShare@velocyversetest01.onmicrosoft.com",
+      "id": "194149b4-3695-45f7-84c9-f853f02d5c18"
+    },
+    {
+      "businessPhones": [],
+      "displayName": "UserUU",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": "TestEmail@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "UserUU@velocyversetest01.onmicrosoft.com",
+      "id": "aaab35f2-65c5-460a-8653-90a7cbd42684"
+    }
+  ]
+}

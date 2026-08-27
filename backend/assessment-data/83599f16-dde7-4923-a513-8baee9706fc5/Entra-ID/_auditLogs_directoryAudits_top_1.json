@@ -1,0 +1,59 @@
+{
+  "endpoint": "/auditLogs/directoryAudits?$top=1",
+  "timestamp": "2026-08-26T13:37:51.632Z",
+  "status": "success",
+  "data": [
+    {
+      "id": "B2C_ffb473e4-2dd9-473e-99b9-a9a70480507b_6a9d0bfa-5195-4973-bb03-8372724b6fc7_134322163566089760",
+      "category": "Authentication",
+      "correlationId": "ffb473e4-2dd9-473e-99b9-a9a70480507b",
+      "result": "success",
+      "resultReason": "Token is valid",
+      "activityDisplayName": "Validate user authentication",
+      "activityDateTime": "2026-08-26T11:12:36.608976Z",
+      "loggedByService": "B2C",
+      "operationType": "Read",
+      "initiatedBy": {
+        "app": null,
+        "user": {
+          "id": "1d382b80-d3c5-444b-93b4-ee00322d0e2d",
+          "displayName": "Magisha@velocyversetest01.onmicrosoft.com",
+          "userPrincipalName": "Magisha@velocyversetest01.onmicrosoft.com",
+          "ipAddress": "20.190.175.24",
+          "userType": null,
+          "agentType": "notAgentic",
+          "homeTenantId": null,
+          "homeTenantName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": null,
+          "displayName": "00000000-0000-0000-0000-000000000000",
+          "type": "Other",
+          "userPrincipalName": null,
+          "groupType": null,
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "targetTenant",
+          "value": "00000000-0000-0000-0000-000000000000"
+        },
+        {
+          "key": "targetEntityType",
+          "value": "None"
+        },
+        {
+          "key": "actorIdentityType",
+          "value": "UPN"
+        },
+        {
+          "key": "RequestId",
+          "value": "ffb473e4-2dd9-473e-99b9-a9a70480507b"
+        }
+      ]
+    }
+  ]
+}

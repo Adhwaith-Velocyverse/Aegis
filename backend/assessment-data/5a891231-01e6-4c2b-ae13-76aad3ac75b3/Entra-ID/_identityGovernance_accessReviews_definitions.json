@@ -1,0 +1,8 @@
+{
+  "endpoint": "/identityGovernance/accessReviews/definitions",
+  "timestamp": "2026-08-26T07:45:40.753Z",
+  "status": "error",
+  "data": {
+    "error": "Insufficient permissions to access this resource"
+  }
+}
