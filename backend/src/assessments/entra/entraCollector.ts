@@ -1327,8 +1327,20 @@ export class EntraCollector {
    }
 
   generateExecutiveReport(assessmentId: string, moduleName: string, result: EntraCollectionResult, summary: any): void {
-    const baseDir = path.join(__dirname, '..', '..', '..', 'assessment-data', assessmentId, moduleName.replace(/\s+/g, '-'));
+    const baseDir = path.join(process.cwd(), 'assessment-data', assessmentId, moduleName.replace(/\s+/g, '-'));
     const filePath = path.join(baseDir, '_executive_report.pdf');
+
+    const NAVY = '#0c2461';
+    const DARK_BLUE = '#1e3a8a';
+    const BLUE = '#2563eb';
+    const LIGHT_BLUE = '#93c5fd';
+    const BLACK = '#1f2937';
+    const WHITE = '#ffffff';
+    const GRAY_BORDER = '#e5e7eb';
+    const GRAY_TEXT = '#6b7280';
+    const GREEN = '#16a34a';
+    const RED = '#dc2626';
+    const ORANGE = '#ea580c';
 
     const orgData = result.rawData[ENTRA_ENDPOINTS.ORGANIZATION]?.value?.[0];
     const tenantName = orgData?.displayName || orgData?.tenantName || 'Unknown Tenant';
@@ -1356,138 +1368,230 @@ export class EntraCollector {
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
 
-    const addSectionHeader = (title: string) => {
-      const remaining = doc.page.height - doc.y - 120;
-      if (remaining < 60) {
+    const ensureSpace = (required: number) => {
+      const remaining = doc.page.height - doc.y - 50;
+      if (remaining < required) {
         doc.addPage();
+        doc.y = 50;
       }
-      doc.moveDown(0.5);
-      doc.fontSize(14).font('Helvetica-Bold').text(title);
-      doc.moveDown(0.3);
-      doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke('#34495e');
+    };
+
+    const sectionHeader = (num: string, title: string) => {
+      ensureSpace(80);
+      doc.moveDown(0.6);
+      doc.fillColor(NAVY).fontSize(18).font('Helvetica-Bold').text(`${num} ${title}`);
+      doc.moveDown(0.15);
+      doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke(BLUE);
       doc.moveDown(0.5);
     };
 
-    doc.fontSize(22).font('Helvetica-Bold').text('Entra ID Security Assessment', { align: 'center' });
-    doc.fontSize(14).font('Helvetica').text('Executive Report', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke('#34495e');
+    const subHeader = (title: string) => {
+      ensureSpace(30);
+      doc.moveDown(0.3);
+      doc.fillColor(DARK_BLUE).fontSize(12).font('Helvetica-Bold').text(title);
+      doc.moveDown(0.1);
+    };
+
+    const paragraph = (text: string) => {
+      doc.fillColor(BLACK).fontSize(10).font('Helvetica').text(text, { align: 'justify', paragraphGap: 4, lineGap: 1 });
+      doc.moveDown(0.4);
+    };
+
+    const infoRow = (label: string, value: string) => {
+      const y = doc.y;
+      doc.fillColor(DARK_BLUE).font('Helvetica-Bold').fontSize(10);
+      doc.text(label, doc.page.margins.left, y);
+      const labelWidth = doc.widthOfString(label);
+      doc.fillColor(BLACK).font('Helvetica').fontSize(10).text(value, doc.page.margins.left + labelWidth + 16, y);
+      doc.y = y + 16;
+    };
+
+    const getResultColor = (result: string): string => {
+      switch (result) {
+        case 'pass': return GREEN;
+        case 'partial': return ORANGE;
+        case 'fail': return RED;
+        case 'needs_manual_review': return ORANGE;
+        case 'not_applicable': return GRAY_TEXT;
+        case 'informational': return GRAY_TEXT;
+        default: return BLACK;
+      }
+    };
+
+    const getResultLabel = (result: string): string => {
+      switch (result) {
+        case 'pass': return 'PASSED';
+        case 'partial': return 'PARTIAL';
+        case 'fail': return 'FAILED';
+        case 'needs_manual_review': return 'MANUAL REVIEW';
+        case 'not_applicable': return 'N/A';
+        case 'informational': return 'INFORMATIONAL';
+        default: return result.toUpperCase();
+      }
+    };
+
+    doc.rect(0, 0, doc.page.width, 90).fill(BLUE);
+    doc.fillColor(WHITE).fontSize(24).font('Helvetica-Bold').text('Entra ID Security Assessment', 0, 32, { align: 'center' });
+    doc.fillColor(WHITE).fontSize(14).font('Helvetica').text('Executive Report', 0, 60, { align: 'center' });
+    doc.y = 105;
+
+    sectionHeader('1.', 'Tenant Information');
+    infoRow('Tenant Name', tenantName);
+    infoRow('Assessment ID', assessmentId);
+    infoRow('Assessment Date', new Date(result.collectedAt).toLocaleString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
+    infoRow('Total Endpoints Collected', String(summary.totalEndpoints));
+    infoRow('Total Actionable Controls', String(totalActionable));
+    infoRow('Controls Passed', String(passCount));
+    infoRow('Controls Failed', String(failCount));
+    infoRow('Controls Partial', String(partialCount));
+    infoRow('Needs Manual Review', String(reviewCount));
+    infoRow('Not Applicable', String(naCount));
+    infoRow('Overall Pass Rate', `${passRate}%`);
+
+    sectionHeader('2.', 'Overall Assessment Score');
+
+    doc.fillColor(BLACK).fontSize(16).font('Helvetica').text(`${totalScore} / ${maxScore} points (${scorePercentage}%)`, { align: 'center' });
     doc.moveDown(0.8);
 
-    addSectionHeader('1. Tenant Information');
-    doc.fontSize(11).font('Helvetica').text(`Tenant Name: ${tenantName}`);
-    doc.text(`Assessment ID: ${assessmentId}`);
-    doc.text(`Assessment Date: ${new Date(result.collectedAt).toLocaleString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`);
-    doc.text(`Total Endpoints Collected: ${summary.totalEndpoints}`);
-    doc.text(`Total Controls: ${totalActionable}`);
-    doc.text(`Controls Passed: ${passCount}`);
-    doc.text(`Controls Failed: ${failCount}`);
-    doc.text(`Controls Partial: ${partialCount}`);
-    doc.text(`Needs Manual Review: ${reviewCount}`);
-    doc.text(`Not Applicable: ${naCount}`);
-    doc.text(`Overall Pass Rate: ${passRate}%`);
+    const barWidth = Math.min(420, doc.page.width - 100);
+    const barHeight = 20;
+    const barX = (doc.page.width - barWidth) / 2;
+    const barY = doc.y;
+
+    doc.rect(barX, barY, barWidth, barHeight).fill(GRAY_BORDER);
+    const fillWidth = Math.max(0, (scorePercentage / 100) * barWidth);
+    const barFillColor = scorePercentage >= 70 ? GREEN : scorePercentage >= 40 ? ORANGE : RED;
+    doc.rect(barX, barY, fillWidth, barHeight).fill(barFillColor);
+    doc.rect(barX, barY, barWidth, barHeight).stroke(NAVY);
+
+    doc.fillColor(WHITE).fontSize(11).font('Helvetica-Bold');
+    const pctText = `${scorePercentage}%`;
+    const pctWidth = doc.widthOfString(pctText);
+    doc.text(pctText, barX + (barWidth - pctWidth) / 2, barY + 14);
+    doc.y = barY + barHeight + 18;
+
+    paragraph(
+      `The tenant ${tenantName} achieved a security score of ${totalScore} out of ${maxScore} possible points (${scorePercentage}%). ` +
+      `This score is calculated based on the severity-weighted compliance of ${totalActionable} actionable security controls. ` +
+      `Each control can earn up to 10 points based on its result (pass = 10 points, partial = varies by severity, fail = 0 points).`
+    );
+
+    subHeader('Score Breakdown:');
+    const partialScore = actionableControls.filter((c: any) => c.result === 'partial').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0);
+    const reviewScore = actionableControls.filter((c: any) => c.result === 'needs_manual_review').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0);
+
+    doc.fillColor(BLACK).fontSize(10).font('Helvetica');
+    doc.text(`  - Passed controls (${passCount} \u00d7 10): ${passCount * 10} points`);
+    doc.text(`  - Partial controls (${partialCount} \u00d7 variable): ${partialScore} points`);
+    doc.text(`  - Failed controls (${failCount} \u00d7 0): 0 points`);
+    doc.text(`  - Manual review (${reviewCount} \u00d7 variable): ${reviewScore} points`);
+    doc.text(`  - Not applicable (${naCount} \u00d7 0): 0 points`);
+    doc.moveDown(0.6);
+
+    sectionHeader('3.', 'Executive Summary');
 
     const passedControls = actionableControls.filter((c: any) => c.result === 'pass' || c.result === 'partial');
     const failedControls = actionableControls.filter((c: any) => c.result === 'fail' || c.result === 'needs_manual_review');
 
-    addSectionHeader('2. Executive Summary');
-
-    doc.fontSize(12).font('Helvetica-Bold').text('Positives:', { indent: 20 });
-    doc.fontSize(10).font('Helvetica').text(
+    subHeader('Key Strengths:');
+    paragraph(
       `The tenant ${tenantName} currently has ${passedControls.length} control(s) that are properly configured out of ${totalActionable} total actionable controls. ` +
       `The following configurations are in place and functioning correctly: ` +
-      passedControls.map((c: any) => `${c.name} (${c.evidence})`).join(', ') + `. ` +
+      `${passedControls.map((c: any) => `${c.name} (${c.evidence})`).join(', ')}. ` +
       `Notably, ${passCount} control(s) passed fully and ${partialCount} control(s) showed partial compliance. ` +
       `The overall security posture demonstrates a pass rate of ${passRate}%, indicating areas of strength in the tenant's identity security configuration.`
     );
-    doc.moveDown(1);
 
-    doc.fontSize(12).font('Helvetica-Bold').text('Negatives:', { indent: 20 });
-    doc.fontSize(10).font('Helvetica').text(
+    subHeader('Areas for Improvement:');
+    paragraph(
       `The following ${failedControls.length} control(s) have not been fully addressed: ` +
-      failedControls.map((c: any) => `${c.name} — ${c.recommendation}`).join('. ') + `. ` +
+      `${failedControls.map((c: any) => `${c.name} ${c.recommendation ? '\u2014 ' + c.recommendation : ''}`).join('. ')}. ` +
       `These gaps represent areas where the tenant is at risk or falling short of recommended security practices. ` +
       `Immediate remediation is recommended for ${failCount} failed control(s) and ${reviewCount} control(s) requiring manual review. ` +
       `Key risks include potential unauthorized access, privilege escalation, and exposure to modern authentication threats.`
     );
 
-    addSectionHeader('3. Informational Controls');
-    for (const control of informationalControls) {
-      const remaining = doc.page.height - doc.y - 100;
-      if (remaining < 70) {
-        doc.addPage();
+    sectionHeader('4.', 'Control Results');
+
+    doc.moveDown(0.3);
+    doc.fillColor(BLACK).fontSize(9).font('Helvetica');
+    const legend = [
+      { label: 'PASSED', color: GREEN },
+      { label: 'PARTIAL', color: ORANGE },
+      { label: 'FAILED', color: RED },
+      { label: 'MANUAL REVIEW', color: ORANGE },
+      { label: 'N/A', color: GRAY_TEXT },
+    ];
+    let legendX = doc.page.margins.left;
+    const legendY = doc.y;
+    for (const item of legend) {
+      doc.rect(legendX, legendY, 10, 10).fill(item.color);
+      doc.fillColor(BLACK).font('Helvetica').text(item.label, legendX + 15, legendY - 1);
+      legendX += doc.widthOfString(item.label) + 38;
+    }
+    doc.y = legendY + 18;
+    doc.moveDown(0.5);
+
+    for (const control of actionableControls) {
+      ensureSpace(70);
+
+      const color = getResultColor(control.result);
+      const label = getResultLabel(control.result);
+      const severityLabel = control.severity.charAt(0).toUpperCase() + control.severity.slice(1);
+
+      doc.fillColor(DARK_BLUE).fontSize(11).font('Helvetica-Bold').text(control.name);
+      doc.moveDown(0.1);
+      doc.fillColor(GRAY_TEXT).fontSize(9).font('Helvetica').text(`Severity: ${severityLabel}`, { continued: true });
+      doc.fillColor(BLACK).text(` | Score: ${control.score}`, { continued: true });
+      doc.fillColor(color).font('Helvetica-Bold').text(` | Result: ${label}`);
+      doc.moveDown(0.1);
+      doc.fillColor(GRAY_TEXT).fontSize(8).font('Helvetica-Oblique').text(`Evidence: ${control.evidence}`);
+      doc.moveDown(0.1);
+      if (control.recommendation) {
+        doc.fillColor(BLACK).fontSize(9).font('Helvetica').text(`Recommendation: ${control.recommendation}`);
+        doc.moveDown(0.1);
       }
-      doc.fontSize(10).font('Helvetica-Bold').text(control.name);
-      doc.fontSize(9).font('Helvetica').text(`Evidence: ${control.evidence}`);
+      if (control.failedItems && control.failedItems.length > 0) {
+        doc.fillColor(BLACK).fontSize(9).font('Helvetica').text(`Failed Items: ${control.failedItems.join(', ')}`);
+        doc.moveDown(0.1);
+      }
       doc.moveDown(0.3);
     }
 
-    addSectionHeader('4. Actionable Controls');
-    for (const control of actionableControls) {
-      const remaining = doc.page.height - doc.y - 100;
-      if (remaining < 80) {
-        doc.addPage();
-      }
-      doc.fontSize(10).font('Helvetica-Bold').text(control.name);
-      doc.fontSize(9).font('Helvetica').text(`Severity: ${control.severity} | Result: ${control.result} | Score: ${control.score}`);
-      doc.fontSize(9).font('Helvetica').text(`Evidence: ${control.evidence}`);
-      if (control.recommendation) {
-        doc.fontSize(9).font('Helvetica-Oblique').text(`Recommendation: ${control.recommendation}`);
-      }
-      if (control.failedItems && control.failedItems.length > 0) {
-        doc.fontSize(9).font('Helvetica').text(`Failed Items: ${control.failedItems.join(', ')}`);
-      }
-      doc.moveDown(0.5);
+    sectionHeader('5.', 'Informational Controls');
+    for (const control of informationalControls) {
+      ensureSpace(40);
+      doc.fillColor(DARK_BLUE).fontSize(10).font('Helvetica-Bold').text(control.name);
+      doc.fillColor(GRAY_TEXT).fontSize(8).font('Helvetica-Oblique').text(`Evidence: ${control.evidence}`);
+      doc.moveDown(0.2);
     }
 
-    addSectionHeader('5. Failed Endpoints');
+    sectionHeader('6.', 'Failed Endpoints');
     if (failedEndpoints.length === 0) {
-      doc.fontSize(10).font('Helvetica').text('No failed endpoints.');
+      paragraph('No failed endpoints were encountered during the assessment. All API endpoints were successfully queried.');
     } else {
       for (const endpoint of failedEndpoints) {
-        const remaining = doc.page.height - doc.y - 80;
-        if (remaining < 40) {
-          doc.addPage();
-        }
-        doc.fontSize(10).font('Helvetica-Bold').text(endpoint.endpoint);
-        doc.fontSize(9).font('Helvetica').text(`Error: ${endpoint.error || 'Unknown error'}`);
+        ensureSpace(50);
+        doc.fillColor(RED).fontSize(10).font('Helvetica-Bold').text(endpoint.endpoint);
+        doc.fillColor(BLACK).fontSize(9).font('Helvetica').text(`Error: ${endpoint.error || 'Unknown error'}`);
         doc.moveDown(0.3);
       }
     }
 
-    const remainingSpace2 = doc.page.height - doc.y - 80;
-    if (remainingSpace2 < 100) {
-      doc.addPage();
-    }
-    addSectionHeader('6. Overall Assessment Score');
-    doc.fontSize(12).font('Helvetica').text(`Current Score: ${totalScore} / Maximum Score: ${maxScore}`);
-    doc.moveDown(0.5);
-    doc.fontSize(10).font('Helvetica').text(
-      `The tenant ${tenantName} achieved a score of ${totalScore} out of ${maxScore} points (${scorePercentage}%). ` +
-      `This score is calculated based on the severity-weighted compliance of ${totalActionable} actionable security controls, ` +
-      `where each control can earn up to 10 points based on its result (pass = 10, partial = varies by severity, fail = 0).`
-    );
-
-    doc.moveDown(1);
-    doc.fontSize(12).font('Helvetica-Bold').text('Score Breakdown:', { indent: 20 });
-    doc.fontSize(10).font('Helvetica').text(`  - Passed controls (${passCount} × 10): ${passCount * 10} points`);
-    doc.fontSize(10).font('Helvetica').text(`  - Partial controls (${partialCount} × variable): ${actionableControls.filter((c: any) => c.result === 'partial').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0)} points`);
-    doc.fontSize(10).font('Helvetica').text(`  - Failed controls (${failCount} × 0): 0 points`);
-    doc.fontSize(10).font('Helvetica').text(`  - Manual review (${reviewCount} × variable): ${actionableControls.filter((c: any) => c.result === 'needs_manual_review').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0)} points`);
-
-    const remainingSpace = doc.page.height - doc.y - 80;
-    if (remainingSpace < 100) {
-      doc.addPage();
-    }
-    addSectionHeader('7. Conclusion');
-    doc.fontSize(10).font('Helvetica').text(
+    sectionHeader('7.', 'Conclusion');
+    paragraph(
       `Based on the assessment of ${tenantName}, ${passCount} of ${totalActionable} security controls passed, ` +
       `with ${failCount} failing and ${partialCount} showing partial compliance. The tenant's ${passRate}% pass rate ` +
       `indicates the following priority actions: address the ${failCount} failed controls immediately, ` +
       `implement the recommended remediation steps to reduce security risks, and establish ongoing monitoring ` +
-      `to maintain and improve the identity security posture over time.`,
-      { align: 'justify' }
+      `to maintain and improve the identity security posture over time.`
     );
+
+    ensureSpace(20);
+    doc.y = doc.page.height - 30;
+    doc.fillColor(GRAY_TEXT).fontSize(8).font('Helvetica')
+      .text(`Report generated on ${new Date().toLocaleString()} | Aegis Security Assessment Tool`,
+        doc.page.margins.left, doc.y);
 
     doc.end();
 
