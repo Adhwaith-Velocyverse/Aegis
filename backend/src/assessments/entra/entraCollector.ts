@@ -1378,21 +1378,25 @@ export class EntraCollector {
 
     const sectionHeader = (num: string, title: string) => {
       ensureSpace(80);
+      doc.x = doc.page.margins.left;
       doc.moveDown(0.6);
       doc.fillColor(NAVY).fontSize(18).font('Helvetica-Bold').text(`${num} ${title}`);
       doc.moveDown(0.15);
       doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke(BLUE);
+      doc.x = doc.page.margins.left;
       doc.moveDown(0.5);
     };
 
     const subHeader = (title: string) => {
       ensureSpace(30);
+      doc.x = doc.page.margins.left;
       doc.moveDown(0.3);
       doc.fillColor(DARK_BLUE).fontSize(12).font('Helvetica-Bold').text(title);
       doc.moveDown(0.1);
     };
 
     const paragraph = (text: string) => {
+      doc.x = doc.page.margins.left;
       doc.fillColor(BLACK).fontSize(10).font('Helvetica').text(text, { align: 'justify', paragraphGap: 4, lineGap: 1 });
       doc.moveDown(0.4);
     };
@@ -1468,6 +1472,7 @@ export class EntraCollector {
     const pctText = `${scorePercentage}%`;
     const pctWidth = doc.widthOfString(pctText);
     doc.text(pctText, barX + (barWidth - pctWidth) / 2, barY + 14);
+    doc.x = doc.page.margins.left;
     doc.y = barY + barHeight + 18;
 
     paragraph(
@@ -1480,6 +1485,7 @@ export class EntraCollector {
     const partialScore = actionableControls.filter((c: any) => c.result === 'partial').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0);
     const reviewScore = actionableControls.filter((c: any) => c.result === 'needs_manual_review').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0);
 
+    doc.x = doc.page.margins.left;
     doc.fillColor(BLACK).fontSize(10).font('Helvetica');
     doc.text(`  - Passed controls (${passCount} \u00d7 10): ${passCount * 10} points`);
     doc.text(`  - Partial controls (${partialCount} \u00d7 variable): ${partialScore} points`);
@@ -1530,11 +1536,13 @@ export class EntraCollector {
       legendX += doc.widthOfString(item.label) + 38;
     }
     doc.y = legendY + 18;
+    doc.x = doc.page.margins.left;
     doc.moveDown(0.5);
 
     for (const control of actionableControls) {
       ensureSpace(70);
 
+      doc.x = doc.page.margins.left;
       const color = getResultColor(control.result);
       const label = getResultLabel(control.result);
       const severityLabel = control.severity.charAt(0).toUpperCase() + control.severity.slice(1);
@@ -1561,6 +1569,7 @@ export class EntraCollector {
     sectionHeader('5.', 'Informational Controls');
     for (const control of informationalControls) {
       ensureSpace(40);
+      doc.x = doc.page.margins.left;
       doc.fillColor(DARK_BLUE).fontSize(10).font('Helvetica-Bold').text(control.name);
       doc.fillColor(GRAY_TEXT).fontSize(8).font('Helvetica-Oblique').text(`Evidence: ${control.evidence}`);
       doc.moveDown(0.2);
@@ -1570,9 +1579,10 @@ export class EntraCollector {
     if (failedEndpoints.length === 0) {
       paragraph('No failed endpoints were encountered during the assessment. All API endpoints were successfully queried.');
     } else {
-      for (const endpoint of failedEndpoints) {
-        ensureSpace(50);
-        doc.fillColor(RED).fontSize(10).font('Helvetica-Bold').text(endpoint.endpoint);
+       for (const endpoint of failedEndpoints) {
+         ensureSpace(50);
+         doc.x = doc.page.margins.left;
+         doc.fillColor(RED).fontSize(10).font('Helvetica-Bold').text(endpoint.endpoint);
         doc.fillColor(BLACK).fontSize(9).font('Helvetica').text(`Error: ${endpoint.error || 'Unknown error'}`);
         doc.moveDown(0.3);
       }
