@@ -2,6 +2,7 @@ import { GraphHttpClient } from '../../services/graphHttpClient';
 import { getAccessTokenForTenant } from '../../services/msalAuth';
 import fs from 'fs';
 import path from 'path';
+import PDFDocument from 'pdfkit';
 import {
   getSeverityForControl,
   calculateControlScore,
@@ -82,7 +83,8 @@ const ENTRA_ENDPOINTS = {
   ENTERPRISE_APPS_SSO_COUNT: '/servicePrincipals?$filter=ssoUrl ne null',
   APPLICATIONS: '/applications',
   SERVICE_PRINCIPALS: '/servicePrincipals',
-  SECURE_SCORES: '/security/secureScores?$top=1',
+   ORGANIZATION: '/organization',
+   SECURE_SCORES: '/security/secureScores?$top=1',
   USERS: '/users',
   GROUPS: '/groups',
 };
@@ -1229,7 +1231,7 @@ export class EntraCollector {
    * Save raw API response data to files for verification
    */
   saveDataToFiles(assessmentId: string, moduleName: string, result: EntraCollectionResult): void {
-    const baseDir = path.join(__dirname, '..', '..', 'assessment-data', assessmentId, moduleName.replace(/\s+/g, '-'));
+    const baseDir = path.join(__dirname, '..', '..', '..', 'assessment-data', assessmentId, moduleName.replace(/\s+/g, '-'));
     
     // Create directory if it doesn't exist
     if (!fs.existsSync(baseDir)) {
@@ -1311,14 +1313,187 @@ export class EntraCollector {
           score,
         };
       }),
-    };
+     };
     fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
+
+    // Generate executive report PDF
+    this.generateExecutiveReport(assessmentId, moduleName, result, summary);
 
     // Save errors file
     if (result.errors.length > 0) {
       const errorsPath = path.join(baseDir, '_errors.json');
       fs.writeFileSync(errorsPath, JSON.stringify(result.errors, null, 2));
+     }
+   }
+
+  generateExecutiveReport(assessmentId: string, moduleName: string, result: EntraCollectionResult, summary: any): void {
+    const baseDir = path.join(__dirname, '..', '..', '..', 'assessment-data', assessmentId, moduleName.replace(/\s+/g, '-'));
+    const filePath = path.join(baseDir, '_executive_report.pdf');
+
+    const orgData = result.rawData[ENTRA_ENDPOINTS.ORGANIZATION]?.value?.[0];
+    const tenantName = orgData?.displayName || orgData?.tenantName || 'Unknown Tenant';
+
+    const actionableControls = summary.controls;
+    const informationalControls = summary.informationalControls;
+    const failedEndpoints = summary.endpoints.filter((e: any) => e.status === 'error');
+
+    const passCount = actionableControls.filter((c: any) => c.result === 'pass').length;
+    const failCount = actionableControls.filter((c: any) => c.result === 'fail').length;
+    const partialCount = actionableControls.filter((c: any) => c.result === 'partial').length;
+    const naCount = actionableControls.filter((c: any) => c.result === 'not_applicable').length;
+    const reviewCount = actionableControls.filter((c: any) => c.result === 'needs_manual_review').length;
+    const totalActionable = actionableControls.length;
+    const passRate = totalActionable > 0 ? Math.round((passCount / totalActionable) * 100) : 0;
+
+    const totalScore = actionableControls.reduce((sum: number, c: any) => {
+      const score = typeof c.score === 'number' ? c.score : 0;
+      return sum + score;
+    }, 0);
+    const maxScore = totalActionable * 10;
+    const scorePercentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+    const doc = new PDFDocument({ margin: 50 });
+    const writeStream = fs.createWriteStream(filePath);
+    doc.pipe(writeStream);
+
+    const addSectionHeader = (title: string) => {
+      const remaining = doc.page.height - doc.y - 120;
+      if (remaining < 60) {
+        doc.addPage();
+      }
+      doc.moveDown(0.5);
+      doc.fontSize(14).font('Helvetica-Bold').text(title);
+      doc.moveDown(0.3);
+      doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke('#34495e');
+      doc.moveDown(0.5);
+    };
+
+    doc.fontSize(22).font('Helvetica-Bold').text('Entra ID Security Assessment', { align: 'center' });
+    doc.fontSize(14).font('Helvetica').text('Executive Report', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.moveTo(doc.page.margins.left, doc.y).lineTo(doc.page.width - doc.page.margins.right, doc.y).stroke('#34495e');
+    doc.moveDown(0.8);
+
+    addSectionHeader('1. Tenant Information');
+    doc.fontSize(11).font('Helvetica').text(`Tenant Name: ${tenantName}`);
+    doc.text(`Assessment ID: ${assessmentId}`);
+    doc.text(`Assessment Date: ${new Date(result.collectedAt).toLocaleString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`);
+    doc.text(`Total Endpoints Collected: ${summary.totalEndpoints}`);
+    doc.text(`Total Controls: ${totalActionable}`);
+    doc.text(`Controls Passed: ${passCount}`);
+    doc.text(`Controls Failed: ${failCount}`);
+    doc.text(`Controls Partial: ${partialCount}`);
+    doc.text(`Needs Manual Review: ${reviewCount}`);
+    doc.text(`Not Applicable: ${naCount}`);
+    doc.text(`Overall Pass Rate: ${passRate}%`);
+
+    const passedControls = actionableControls.filter((c: any) => c.result === 'pass' || c.result === 'partial');
+    const failedControls = actionableControls.filter((c: any) => c.result === 'fail' || c.result === 'needs_manual_review');
+
+    addSectionHeader('2. Executive Summary');
+
+    doc.fontSize(12).font('Helvetica-Bold').text('Positives:', { indent: 20 });
+    doc.fontSize(10).font('Helvetica').text(
+      `The tenant ${tenantName} currently has ${passedControls.length} control(s) that are properly configured out of ${totalActionable} total actionable controls. ` +
+      `The following configurations are in place and functioning correctly: ` +
+      passedControls.map((c: any) => `${c.name} (${c.evidence})`).join(', ') + `. ` +
+      `Notably, ${passCount} control(s) passed fully and ${partialCount} control(s) showed partial compliance. ` +
+      `The overall security posture demonstrates a pass rate of ${passRate}%, indicating areas of strength in the tenant's identity security configuration.`
+    );
+    doc.moveDown(1);
+
+    doc.fontSize(12).font('Helvetica-Bold').text('Negatives:', { indent: 20 });
+    doc.fontSize(10).font('Helvetica').text(
+      `The following ${failedControls.length} control(s) have not been fully addressed: ` +
+      failedControls.map((c: any) => `${c.name} — ${c.recommendation}`).join('. ') + `. ` +
+      `These gaps represent areas where the tenant is at risk or falling short of recommended security practices. ` +
+      `Immediate remediation is recommended for ${failCount} failed control(s) and ${reviewCount} control(s) requiring manual review. ` +
+      `Key risks include potential unauthorized access, privilege escalation, and exposure to modern authentication threats.`
+    );
+
+    addSectionHeader('3. Informational Controls');
+    for (const control of informationalControls) {
+      const remaining = doc.page.height - doc.y - 100;
+      if (remaining < 70) {
+        doc.addPage();
+      }
+      doc.fontSize(10).font('Helvetica-Bold').text(control.name);
+      doc.fontSize(9).font('Helvetica').text(`Evidence: ${control.evidence}`);
+      doc.moveDown(0.3);
     }
+
+    addSectionHeader('4. Actionable Controls');
+    for (const control of actionableControls) {
+      const remaining = doc.page.height - doc.y - 100;
+      if (remaining < 80) {
+        doc.addPage();
+      }
+      doc.fontSize(10).font('Helvetica-Bold').text(control.name);
+      doc.fontSize(9).font('Helvetica').text(`Severity: ${control.severity} | Result: ${control.result} | Score: ${control.score}`);
+      doc.fontSize(9).font('Helvetica').text(`Evidence: ${control.evidence}`);
+      if (control.recommendation) {
+        doc.fontSize(9).font('Helvetica-Oblique').text(`Recommendation: ${control.recommendation}`);
+      }
+      if (control.failedItems && control.failedItems.length > 0) {
+        doc.fontSize(9).font('Helvetica').text(`Failed Items: ${control.failedItems.join(', ')}`);
+      }
+      doc.moveDown(0.5);
+    }
+
+    addSectionHeader('5. Failed Endpoints');
+    if (failedEndpoints.length === 0) {
+      doc.fontSize(10).font('Helvetica').text('No failed endpoints.');
+    } else {
+      for (const endpoint of failedEndpoints) {
+        const remaining = doc.page.height - doc.y - 80;
+        if (remaining < 40) {
+          doc.addPage();
+        }
+        doc.fontSize(10).font('Helvetica-Bold').text(endpoint.endpoint);
+        doc.fontSize(9).font('Helvetica').text(`Error: ${endpoint.error || 'Unknown error'}`);
+        doc.moveDown(0.3);
+      }
+    }
+
+    const remainingSpace2 = doc.page.height - doc.y - 80;
+    if (remainingSpace2 < 100) {
+      doc.addPage();
+    }
+    addSectionHeader('6. Overall Assessment Score');
+    doc.fontSize(12).font('Helvetica').text(`Current Score: ${totalScore} / Maximum Score: ${maxScore}`);
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Helvetica').text(
+      `The tenant ${tenantName} achieved a score of ${totalScore} out of ${maxScore} points (${scorePercentage}%). ` +
+      `This score is calculated based on the severity-weighted compliance of ${totalActionable} actionable security controls, ` +
+      `where each control can earn up to 10 points based on its result (pass = 10, partial = varies by severity, fail = 0).`
+    );
+
+    doc.moveDown(1);
+    doc.fontSize(12).font('Helvetica-Bold').text('Score Breakdown:', { indent: 20 });
+    doc.fontSize(10).font('Helvetica').text(`  - Passed controls (${passCount} × 10): ${passCount * 10} points`);
+    doc.fontSize(10).font('Helvetica').text(`  - Partial controls (${partialCount} × variable): ${actionableControls.filter((c: any) => c.result === 'partial').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0)} points`);
+    doc.fontSize(10).font('Helvetica').text(`  - Failed controls (${failCount} × 0): 0 points`);
+    doc.fontSize(10).font('Helvetica').text(`  - Manual review (${reviewCount} × variable): ${actionableControls.filter((c: any) => c.result === 'needs_manual_review').reduce((s: number, c: any) => s + (typeof c.score === 'number' ? c.score : 0), 0)} points`);
+
+    const remainingSpace = doc.page.height - doc.y - 80;
+    if (remainingSpace < 100) {
+      doc.addPage();
+    }
+    addSectionHeader('7. Conclusion');
+    doc.fontSize(10).font('Helvetica').text(
+      `Based on the assessment of ${tenantName}, ${passCount} of ${totalActionable} security controls passed, ` +
+      `with ${failCount} failing and ${partialCount} showing partial compliance. The tenant's ${passRate}% pass rate ` +
+      `indicates the following priority actions: address the ${failCount} failed controls immediately, ` +
+      `implement the recommended remediation steps to reduce security risks, and establish ongoing monitoring ` +
+      `to maintain and improve the identity security posture over time.`,
+      { align: 'justify' }
+    );
+
+    doc.end();
+
+    writeStream.on('finish', () => {
+      console.log(`Executive report generated: ${filePath}`);
+    });
   }
 
   async collectAll(): Promise<EntraCollectionResult> {
@@ -1326,6 +1501,7 @@ export class EntraCollector {
     const errors: EntraCollectionError[] = [];
 
     const uniqueEndpoints = [...new Set(ENTRA_CONTROLS.flatMap((c) => c.endpoints))];
+    uniqueEndpoints.push(ENTRA_ENDPOINTS.ORGANIZATION);
 
     for (const endpoint of uniqueEndpoints) {
       try {
@@ -1393,6 +1569,7 @@ export class EntraCollector {
       ENTRA_ENDPOINTS.CA_POLICIES_COUNT,
       ENTRA_ENDPOINTS.MFA_REGISTRATION_DETAILS,
       ENTRA_ENDPOINTS.SECURE_SCORES,
+      ENTRA_ENDPOINTS.ORGANIZATION,
     ];
 
     const rawData: Record<string, any> = {};
