@@ -3,7 +3,7 @@ import { GraphConnector, getAccessToken, ModuleCollectionResult, GraphErrorType,
 import { calculateAssessmentScore } from './scoringEngine';
 import { AssessmentType } from '@aegis/shared';
 import { v4 as uuidv4 } from 'uuid';
-import { createEntraCollector, EntraCollectionResult } from './entraCollector';
+import { createEntraCollector, EntraCollectionResult } from '../assessments/entra/entraCollector';
 import { createEmailSecurityCollector, EmailSecurityCollectionResult } from './emailSecurityCollector';
 import { evaluateEmailSecurityControl, EMAIL_SECURITY_CONTROLS } from './emailSecurityEvaluator';
 

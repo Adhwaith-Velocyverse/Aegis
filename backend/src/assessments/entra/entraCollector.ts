@@ -1,6 +1,5 @@
-import { GraphHttpClient } from './graphHttpClient';
-import { getAccessTokenForTenant } from './msalAuth';
-import { AuthenticationError } from '../types/m365';
+import { GraphHttpClient } from '../../services/graphHttpClient';
+import { getAccessTokenForTenant } from '../../services/msalAuth';
 import fs from 'fs';
 import path from 'path';
 import {
