@@ -1364,12 +1364,12 @@ export class EntraCollector {
     const maxScore = totalActionable * 10;
     const scorePercentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 36 });
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
 
     const ensureSpace = (required: number) => {
-      const remaining = doc.page.height - doc.y - 50;
+      const remaining = doc.page.height - doc.y - 36;
       if (remaining < required) {
         doc.addPage();
         doc.y = 50;
@@ -1402,7 +1402,7 @@ export class EntraCollector {
       doc.fillColor(DARK_BLUE).font('Helvetica-Bold').fontSize(10);
       doc.text(label, doc.page.margins.left, y);
       const labelWidth = doc.widthOfString(label);
-      doc.fillColor(BLACK).font('Helvetica').fontSize(10).text(value, doc.page.margins.left + labelWidth + 16, y);
+      doc.fillColor(BLACK).font('Helvetica').fontSize(10).text(value, doc.page.margins.left + labelWidth + 12, y);
       doc.y = y + 16;
     };
 
