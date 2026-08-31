@@ -1,0 +1,77 @@
+{
+  "endpoint": "/directoryRoles/61bd59ee-9d0d-4ce1-8a7e-32819f4cb211/members",
+  "timestamp": "2026-08-31T07:37:47.249Z",
+  "status": "success",
+  "data": [
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "13b918dd-7bea-4b60-8255-5c8468afb7f4",
+      "businessPhones": [],
+      "displayName": "Kenneth",
+      "givenName": "Kenneth",
+      "jobTitle": null,
+      "mail": "Kenneth@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Kenneth@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "1d382b80-d3c5-444b-93b4-ee00322d0e2d",
+      "businessPhones": [],
+      "displayName": "Magisha",
+      "givenName": "Magisha",
+      "jobTitle": null,
+      "mail": "Magisha@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Magisha@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "4203b7e6-368f-4137-a842-14b9b78bf1fd",
+      "businessPhones": [],
+      "displayName": "Adhwaith",
+      "givenName": "Adhwaith",
+      "jobTitle": null,
+      "mail": "Adhwaith@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": "Anilkumar",
+      "userPrincipalName": "Adhwaith@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "89cc921f-39b0-49f2-9464-38aea9a4ad13",
+      "businessPhones": [],
+      "displayName": "Megashyam",
+      "givenName": "Megashyam",
+      "jobTitle": null,
+      "mail": "Megashyam@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Megashyam@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "8e2e2454-df75-4fd8-93cd-6218752e326d",
+      "businessPhones": [],
+      "displayName": "Vignesh",
+      "givenName": "Vignesh",
+      "jobTitle": null,
+      "mail": "Vignesh@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Vignesh@velocyversetest01.onmicrosoft.com"
+    }
+  ]
+}

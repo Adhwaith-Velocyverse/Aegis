@@ -1,6 +1,9 @@
 import { query } from '../db/connection';
 import { GraphConnector, getAccessToken, ModuleCollectionResult, GraphErrorType, MODULE_CONFIGS, getModuleConfig } from './graphConnector';
 import { calculateAssessmentScore } from './scoringEngine';
+import { processAssessmentScore, getScoreForAssessment } from '../security-scoring/integration/assessment-hook';
+import { attachScoreToReport } from '../security-scoring/integration/report-adapter';
+import { sendScoreEmail } from '../security-scoring/integration/email-adapter';
 import { AssessmentType } from '@aegis/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { createEntraCollector, EntraCollectionResult } from './entraCollector';
@@ -212,6 +215,12 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
       [uuidv4(), assessmentId, 'band_description', scoringResult.bandDescription, scoringResult.bandDescription]
     );
 
+    // Run standalone security scoring and recommendation engine
+    const securityScore = await processAssessmentScore(assessmentId);
+    if (securityScore) {
+      await attachScoreToReport(assessmentId, securityScore);
+    }
+
     // Check if manual review is needed for Detailed assessments
     let needsManualReview = false;
     if (type === 'detailed') {
@@ -230,7 +239,10 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
       }
     }
 
-    return scoringResult;
+    return {
+      ...scoringResult,
+      securityScore,
+    };
   } catch (error) {
     console.error('Run assessment error:', error);
     await query("UPDATE assessments SET status = 'failed' WHERE id = ?", [assessmentId]);

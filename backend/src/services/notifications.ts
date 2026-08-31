@@ -11,16 +11,27 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+console.info('[Email] SMTP configuration:', {
+  host: process.env.SMTP_HOST ? 'configured' : 'MISSING',
+  port: process.env.SMTP_PORT || '587',
+  user: process.env.SMTP_USER ? 'configured' : 'MISSING',
+  pass: process.env.SMTP_PASS ? 'configured' : 'MISSING',
+  from: process.env.SMTP_FROM || process.env.SMTP_USER || 'MISSING',
+});
+
 export async function sendEmail(to: string, subject: string, html: string) {
   try {
-    await transporter.sendMail({
+    const result = await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to,
       subject,
       html,
     });
+    console.info(`[Email] provider accepted message messageId=${result.messageId} to=${to.replace(/(.{2})(.*)(@.*)/, '$1***$3')}`);
+    return result;
   } catch (error) {
-    console.error('Email send error:', error);
+    console.error(`[Email] provider rejected message to=${to.replace(/(.{2})(.*)(@.*)/, '$1***$3')} error=${(error as Error).message}`);
+    throw error;
   }
 }
 

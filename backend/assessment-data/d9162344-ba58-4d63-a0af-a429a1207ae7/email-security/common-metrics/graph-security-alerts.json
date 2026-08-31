@@ -1,0 +1,7 @@
+{
+  "endpoint": "graph-security-alerts",
+  "timestamp": "2026-08-31T09:43:03.143Z",
+  "status": "error",
+  "error": "Insufficient permissions to access this resource",
+  "durationMs": 1025
+}

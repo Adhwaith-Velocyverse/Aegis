@@ -1,0 +1,24 @@
+{
+  "name": "@aegis/reporting",
+  "version": "1.0.0",
+  "description": "Reusable security assessment reporting module for Aegis. Generates PDF and Excel reports from scoring engine output.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "pdfkit": "^0.13.0",
+    "exceljs": "^4.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@types/pdfkit": "^0.13.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  }
+}

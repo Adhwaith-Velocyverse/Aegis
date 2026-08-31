@@ -1,0 +1,63 @@
+{
+  "endpoint": "/identity/conditionalAccess/policies?$count=true",
+  "timestamp": "2026-08-31T11:34:18.605Z",
+  "status": "success",
+  "data": [
+    {
+      "id": "528a741c-a87b-456a-a335-00e58bee7b37",
+      "templateId": null,
+      "displayName": "Project Testing - Required MFA",
+      "createdDateTime": "2026-06-10T14:13:22.5865119Z",
+      "modifiedDateTime": null,
+      "state": "enabled",
+      "deletedDateTime": null,
+      "sessionControls": null,
+      "conditions": {
+        "userRiskLevels": [],
+        "signInRiskLevels": [],
+        "clientAppTypes": [
+          "all"
+        ],
+        "servicePrincipalRiskLevels": [],
+        "insiderRiskLevels": null,
+        "platforms": null,
+        "locations": null,
+        "devices": null,
+        "clientApplications": null,
+        "authenticationFlows": null,
+        "applications": {
+          "includeApplications": [
+            "All"
+          ],
+          "excludeApplications": [],
+          "includeUserActions": [],
+          "includeAuthenticationContextClassReferences": [],
+          "applicationFilter": null
+        },
+        "users": {
+          "includeUsers": [
+            "6eada80a-93e8-4f42-a273-49847895ed00",
+            "044441b0-7a21-432f-8bbe-fa6a643480a3"
+          ],
+          "excludeUsers": [],
+          "includeGroups": [],
+          "excludeGroups": [],
+          "includeRoles": [],
+          "excludeRoles": [],
+          "includeGuestsOrExternalUsers": null,
+          "excludeGuestsOrExternalUsers": null
+        }
+      },
+      "grantControls": {
+        "operator": "OR",
+        "builtInControls": [
+          "mfa"
+        ],
+        "customAuthenticationFactors": [],
+        "termsOfUse": [],
+        "authenticationStrength@odata.context": "https://graph.microsoft.com/v1.0/$metadata#identity/conditionalAccess/policies('528a741c-a87b-456a-a335-00e58bee7b37')/grantControls/authenticationStrength/$entity",
+        "authenticationStrength": null
+      }
+    }
+  ]
+}
