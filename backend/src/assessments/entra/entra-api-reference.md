@@ -45,7 +45,7 @@ The following controls are evaluated during a quick assessment:
 |---|---------|----------------|---------------------|
 | 12 | Privileged Identity Management (PIM) enabled | `/roleManagement/directory/roleEligibilitySchedules` | RoleManagement.Read.Directory |
 | 13 | Just-In-Time (JIT) activation configured | `/roleManagement/directory/roleAssignmentSchedules` | RoleManagement.Read.Directory |
-| 14 | PIM activation requires MFA | `/policies/roleManagementPolicies` | RoleManagement.Read.Directory |
+| 14 | PIM activation requires MFA | `/policies/roleManagementPolicies?$count=true&$top=999` | RoleManagement.Read.Directory | ConsistencyLevel: eventual |
 | 15 | Global Administrator accounts <= 5 | `/directoryRoles`, `/directoryRoles/{roleId}/members` | RoleManagement.Read.Directory |
 
 ### Identity Governance Controls
@@ -69,7 +69,7 @@ The following informational controls are included in quick assessment - they dis
 | QI3 | Total number of Microsoft 365 Groups | `/groups?$filter=groupTypes/any(c:c eq 'Unified')&$count=true` | GroupMember.Read.All |
 | QI4 | Total number of licensed users | `/users?$filter=assignedLicenses/$count ne 0&$count=true` | User.Read.All |
 | QI5 | Total number of unlicensed users | `/users?$filter=assignedLicenses/$count eq 0&$count=true` | User.Read.All |
-| QI6 | Total number of Administrative Units | `/administrativeUnits` | AdministrativeUnit.Read.All |
+| QI6 | Total number of Administrative Units | `/directory/administrativeUnits?$count=true&$top=999` | AdministrativeUnit.Read.All | ConsistencyLevel: eventual |
 | QI7 | Total number of risky users | `/identityProtection/riskDetections?$filter=riskState eq 'atRisk'&$count=true` | IdentityRiskEvent.Read.All |
 | QI8 | Total number of privileged administrator accounts | `/directoryRoles` + `/directoryRoles/{roleId}/members` | RoleManagement.Read.Directory |
 | QI9 | Total number of Conditional Access policies | `/identity/conditionalAccess/policies?$count=true` | Policy.Read.All |
@@ -162,7 +162,7 @@ The following controls are informational only - they display tenant information 
 |---|---------|----------------|---------------------|
 | I21 | Total number of App Registrations | `/applications?$count=true` | Application.Read.All |
 | I22 | Total number of Enterprise Applications | `/servicePrincipals?$count=true` | Application.Read.All |
-| I23 | Total number of Enterprise Applications using SSO | `/servicePrincipals?$filter=ssoUrl ne null&$count=true` | Application.Read.All |
+| I23 | Total number of Enterprise Applications using SSO | `/servicePrincipals?$filter=ssoUrl ne null&$count=true&$top=999` | Application.Read.All | ConsistencyLevel: eventual |
 | I24 | Total number of application credentials nearing expiration | `/applications` | Application.Read.All |
 
 ### Configuration Information
@@ -189,7 +189,7 @@ For quick assessments, only these endpoints are called:
 | 6 | `/directoryRoles/{roleId}/members` | GET | Get members of specific roles | RoleManagement.Read.Directory |
 | 7 | `/roleManagement/directory/roleEligibilitySchedules` | GET | Get PIM role eligibility schedules | RoleManagement.Read.Directory |
 | 8 | `/roleManagement/directory/roleAssignmentSchedules` | GET | Get PIM role assignment schedules | RoleManagement.Read.Directory |
-| 9 | `/policies/roleManagementPolicies` | GET | Get role management policies | RoleManagement.Read.Directory |
+| 9 | `/policies/roleManagementPolicies?$count=true&$top=999` | GET | Get role management policies | RoleManagement.Read.Directory | ConsistencyLevel: eventual |
 | 10 | `/users?$filter=userType eq 'Guest'` | GET | List guest users | User.Read.All |
 | 11 | `/identityGovernance/accessReviews/definitions` | GET | List access review definitions | AccessReview.Read.All |
 
@@ -214,7 +214,7 @@ For detailed assessments, additional endpoints are called beyond the quick asses
 | 22 | `/users?$filter=accountEnabled eq true&$count=true` | GET | Count active users | User.Read.All |
 | 23 | `/users?$filter=accountEnabled eq false&$count=true` | GET | Count inactive users | User.Read.All |
 | 24 | `/groups?$filter=groupTypes/any(c:c eq 'Unified')&$count=true` | GET | Count M365 Groups | GroupMember.Read.All |
-| 25 | `/administrativeUnits?$count=true` | GET | Count Administrative Units | AdministrativeUnit.Read.All |
+| 25 | `/directory/administrativeUnits?$count=true&$top=999` | GET | Count Administrative Units | AdministrativeUnit.Read.All | ConsistencyLevel: eventual |
 | 26 | `/applications?$count=true` | GET | Count App Registrations | Application.Read.All |
 | 27 | `/servicePrincipals?$count=true` | GET | Count Enterprise Applications | Application.Read.All |
 | 28 | `/secureScores?$top=1` | GET | Get Identity Secure Score | SecurityEvents.Read.All |
