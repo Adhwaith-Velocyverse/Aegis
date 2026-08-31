@@ -2,7 +2,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../db/connection';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { generateAuthUrl, exchangeCodeForTokens, storeTokens, OAUTH_SCOPES, getAccessTokenForTenant, getAuthorityUrl, mergeConsentedScopes } from '../services/msalAuth';
+import { generateAuthUrl, exchangeCodeForTokens, storeTokens, OAUTH_SCOPES, getAccessTokenForTenant, getAuthorityUrl, mergeConsentedScopes, encryptTokenForStorage } from '../services/msalAuth';
 import { z } from 'zod';
 import { getAccessToken } from '../services/graphConnector';
 import { auditLog } from '../middleware/audit';
@@ -24,7 +24,13 @@ export const MODULE_SCOPE_MAP: Record<string, { scopes: string[]; connectorType:
     connectorType: 'powershell',
   },
   'Email': {
-    scopes: [], // PowerShell-only — no Graph scopes
+    scopes: [
+      'User.Read.All',
+      'GroupMember.Read.All',
+      'RoleManagement.Read.Directory',
+      'SecurityAlert.Read.All',
+      'SecurityIncident.Read.All',
+    ],
     connectorType: 'powershell',
   },
   'Intune': {
@@ -46,7 +52,7 @@ export const MODULE_SCOPE_MAP: Record<string, { scopes: string[]; connectorType:
 };
 
 // Quick Assessment critical-control subset (Graph-reachable modules only)
-export const QUICK_ASSESSMENT_MODULES = ['Entra ID', 'M365 Admin Center', 'Intune', 'SharePoint', 'Teams'];
+export const QUICK_ASSESSMENT_MODULES = ['Entra ID', 'M365 Admin Center', 'Email', 'Intune', 'SharePoint', 'Teams'];
 
 // Detailed Assessment full module set
 export const DETAILED_ASSESSMENT_MODULES = Object.keys(MODULE_SCOPE_MAP);
@@ -366,13 +372,16 @@ router.post('/connect', authenticate, async (req: AuthRequest, res) => {
     }
 
     if (connectionMethod === 'direct' && azureTenantId && azureClientId && azureClientSecret) {
-      const encryptedSecret = Buffer.from(azureClientSecret).toString('base64');
+      const existingConnection = existing.length > 0 ? (await query('SELECT connection_status FROM tenant_connections WHERE id = ?', [connectionId]) as any[])[0] : null;
+      const previousStatus = existingConnection?.connection_status;
+      const encryptedSecret = encryptTokenForStorage(azureClientSecret);
+
       await query(
         `INSERT INTO tenant_connections (id, organization_id, tenant_id, tenant_name, connection_status,
          azure_tenant_id, azure_client_id, azure_client_secret_encrypted)
-         VALUES (?, ?, ?, ?, 'connected', ?, ?, ?)
+         VALUES (?, ?, ?, ?, 'validating', ?, ?, ?)
          ON DUPLICATE KEY UPDATE
-         connection_status = 'connected',
+         connection_status = 'validating',
          azure_tenant_id = VALUES(azure_tenant_id),
          azure_client_id = VALUES(azure_client_id),
          azure_client_secret_encrypted = VALUES(azure_client_secret_encrypted)`,
@@ -409,6 +418,7 @@ router.post('/connect', authenticate, async (req: AuthRequest, res) => {
       try {
         const manager = new Microsoft365ConnectionManager(connectionId);
         const metadata = await manager.initialize();
+        await query('UPDATE tenant_connections SET connection_status = ? WHERE id = ?', ['connected', connectionId]);
         res.status(201).json({
           success: true,
           data: {
@@ -422,7 +432,8 @@ router.post('/connect', authenticate, async (req: AuthRequest, res) => {
           },
         });
       } catch (initError: any) {
-        await query('UPDATE tenant_connections SET connection_status = ? WHERE id = ?', ['error', connectionId]);
+        const restoreState = ['connected', 'healthy', 'degraded'].includes(previousStatus) ? previousStatus : 'error';
+        await query('UPDATE tenant_connections SET connection_status = ? WHERE id = ?', [restoreState, connectionId]);
         res.status(502).json({
           success: false,
           error: 'Connection validation failed. Please check your credentials and try again.',

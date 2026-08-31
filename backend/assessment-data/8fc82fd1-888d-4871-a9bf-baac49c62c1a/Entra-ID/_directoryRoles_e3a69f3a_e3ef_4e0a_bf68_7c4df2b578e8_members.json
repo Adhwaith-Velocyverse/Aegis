@@ -1,0 +1,77 @@
+{
+  "endpoint": "/directoryRoles/e3a69f3a-e3ef-4e0a-bf68-7c4df2b578e8/members",
+  "timestamp": "2026-08-28T07:06:23.265Z",
+  "status": "success",
+  "data": [
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "fd618d0f-5720-4ada-abe9-7e83c6e0799f",
+      "businessPhones": [],
+      "displayName": "Suseandhiran Natarajan",
+      "givenName": "Suseandhiran",
+      "jobTitle": null,
+      "mail": null,
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": "Natarajan",
+      "userPrincipalName": "susee_Velocyverse.com#EXT#@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "13b918dd-7bea-4b60-8255-5c8468afb7f4",
+      "businessPhones": [],
+      "displayName": "Kenneth",
+      "givenName": "Kenneth",
+      "jobTitle": null,
+      "mail": "Kenneth@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Kenneth@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "cf5bd30b-d966-4ef8-a06c-575f2064a0be",
+      "businessPhones": [],
+      "displayName": "Pavithra",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": "Pavithra@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Pavithra@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "f1249b82-1f7b-458c-8ef4-d571e6b5661f",
+      "businessPhones": [],
+      "displayName": "Admin",
+      "givenName": "Admin",
+      "jobTitle": null,
+      "mail": null,
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Admin@velocyversetest01.onmicrosoft.com"
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      "id": "4203b7e6-368f-4137-a842-14b9b78bf1fd",
+      "businessPhones": [],
+      "displayName": "Adhwaith",
+      "givenName": "Adhwaith",
+      "jobTitle": null,
+      "mail": "Adhwaith@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": "Anilkumar",
+      "userPrincipalName": "Adhwaith@velocyversetest01.onmicrosoft.com"
+    }
+  ]
+}

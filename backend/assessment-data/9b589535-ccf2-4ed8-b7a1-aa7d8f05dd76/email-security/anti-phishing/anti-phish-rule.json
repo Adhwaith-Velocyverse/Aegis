@@ -1,0 +1,7 @@
+{
+  "endpoint": "anti-phish-rule",
+  "timestamp": "2026-08-31T05:47:51.650Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-AntiPhishRule : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:20\r\n+ Get-AntiPhishRule  -ResultSize Unlimited | ConvertTo-Json -Depth 10\r\n+                    ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-AntiPhishRule], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-AntiPhishRule",
+  "durationMs": 10578
+}

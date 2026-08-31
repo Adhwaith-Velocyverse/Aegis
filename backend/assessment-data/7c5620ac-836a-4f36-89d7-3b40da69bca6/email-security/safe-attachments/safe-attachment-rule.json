@@ -1,0 +1,7 @@
+{
+  "endpoint": "safe-attachment-rule",
+  "timestamp": "2026-08-28T11:27:52.406Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-SafeAttachmentRule : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:25\r\n+ Get-SafeAttachmentRule  -ResultSize Unlimited | ConvertTo-Json -Depth ...\r\n+                         ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-SafeAttachmentRule], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-SafeAttachmentRule",
+  "durationMs": 10785
+}

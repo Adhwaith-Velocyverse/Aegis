@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:migrate": "tsx src/db/migrate.ts",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aegis/shared": "*",
@@ -42,7 +44,9 @@
     "@types/pdfkit": "^0.13.4",
     "@types/speakeasy": "^2.0.10",
     "@types/uuid": "^9.0.7",
+    "@vitest/coverage-v8": "^4.1.11",
     "tsx": "^4.6.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.11"
   }
 }

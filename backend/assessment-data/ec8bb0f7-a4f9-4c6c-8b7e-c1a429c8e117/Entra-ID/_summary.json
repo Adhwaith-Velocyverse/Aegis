@@ -1,0 +1,391 @@
+{
+  "assessmentId": "ec8bb0f7-a4f9-4c6c-8b7e-c1a429c8e117",
+  "moduleName": "Entra-ID",
+  "collectedAt": "2026-08-28T07:54:42.589Z",
+  "status": "partial",
+  "totalEndpoints": 36,
+  "successfulEndpoints": 34,
+  "failedEndpoints": 2,
+  "totalControls": 18,
+  "controlsPass": 5,
+  "controlsFail": 12,
+  "controlsManualReview": 1,
+  "controlsNotApplicable": 0,
+  "endpoints": [
+    {
+      "endpoint": "/policies/authenticationMethodsPolicy",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/policies/identitySecurityDefaultsEnforcementPolicy",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identity/conditionalAccess/policies",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identity/conditionalAccess/namedLocations",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/roleManagement/directory/roleEligibilitySchedules",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/roleManagement/directory/roleAssignmentSchedules",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/policies/roleManagementPolicies",
+      "status": "error",
+      "error": "Request failed with status code 400"
+    },
+    {
+      "endpoint": "/users?$filter=userType eq 'Guest'",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identityGovernance/accessReviews/definitions",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/users?$count=true",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/users?$filter=userType eq 'Guest'&$count=true",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/groups?$filter=groupTypes/any(c:c eq 'Unified')&$count=true",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/users?$filter=assignedLicenses/$count ne 0&$count=true",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/users?$filter=assignedLicenses/$count eq 0&$count=true",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/administrativeUnits",
+      "status": "error",
+      "error": "Request failed with status code 400"
+    },
+    {
+      "endpoint": "/identityProtection/riskDetections?$filter=riskState eq 'atRisk'&$count=true",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/identity/conditionalAccess/policies?$count=true",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/reports/authenticationMethods/userRegistrationDetails",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/security/secureScores?$top=1",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/077eb471-236e-4fb3-96a0-c6a7b8846e18/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/09390a81-e173-4dac-b39f-b3176ee928ed/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/0c730223-bcd3-46ea-a189-000fd7a67f77/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/0fc424a9-73ff-41cf-90dc-2c6215a66b85/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/1d945866-246f-461d-a222-f9577ae3fb19/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/315fae71-f55b-4df1-b2d8-3c5d1241bff6/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/4e06b030-b159-4dba-9c7b-a3b111c406a8/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/61bd59ee-9d0d-4ce1-8a7e-32819f4cb211/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/63d0ee2e-adc2-4e57-a3bc-f371d8e8dfc1/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/726c3909-7964-4e9a-a51a-8af10ce0a595/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/a9228714-3a70-423b-a6e3-da3951675b74/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/c11c78ec-ee37-49d9-8f96-133f4f0d3241/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/d00f3f45-118e-4628-ad3d-5a44df5377ab/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/d43e2ae6-cb6b-4f3d-9c28-b6e09a0d91ba/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/de6b6017-ce82-40d9-b50a-2bda26277147/members",
+      "status": "success",
+      "error": null
+    },
+    {
+      "endpoint": "/directoryRoles/e3a69f3a-e3ef-4e0a-bf68-7c4df2b578e8/members",
+      "status": "success",
+      "error": null
+    }
+  ],
+  "controls": [
+    {
+      "name": "MFA enforced for all users via Security Defaults or Conditional Access",
+      "id": "entra-authmfa-mfa-enforced-for-all-users",
+      "result": "fail",
+      "evidence": "MFA not enforced for all users",
+      "recommendation": "Enable Security Defaults or CA policy for MFA"
+    },
+    {
+      "name": "MFA enforced for all privileged users",
+      "id": "entra-authmfa-mfa-enforced-for-privileged-users",
+      "result": "fail",
+      "evidence": "No CA policy requires MFA for privileged users",
+      "recommendation": "Create CA policy requiring MFA for privileged roles"
+    },
+    {
+      "name": "Legacy authentication blocked",
+      "id": "entra-authmfa-legacy-authentication-blocked",
+      "result": "fail",
+      "evidence": "No policy blocks legacy authentication",
+      "recommendation": "Enable Security Defaults or CA policy to block legacy auth"
+    },
+    {
+      "name": "SSPR enabled",
+      "id": "entra-authmfa-sspr-enabled",
+      "result": "fail",
+      "evidence": "SSPR not enabled",
+      "recommendation": "Enable SSPR"
+    },
+    {
+      "name": "Password Protection Smart Lockout configured",
+      "id": "entra-authmfa-smart-lockout-configured",
+      "result": "fail",
+      "evidence": "Smart lockout not configured",
+      "recommendation": "Configure smart lockout threshold"
+    },
+    {
+      "name": "Conditional Access policies configured",
+      "id": "entra-conditionalaccess-ca-policies-configured",
+      "result": "pass",
+      "evidence": "1 CA policies enabled",
+      "recommendation": ""
+    },
+    {
+      "name": "Conditional Access requires MFA for administrators",
+      "id": "entra-conditionalaccess-ca-requires-mfa-for-admins",
+      "result": "fail",
+      "evidence": "No CA policy requires MFA for admins",
+      "recommendation": "Create CA policy requiring MFA for privileged roles"
+    },
+    {
+      "name": "Conditional Access requires MFA for high-risk sign-ins",
+      "id": "entra-conditionalaccess-ca-for-high-risk-sign-ins",
+      "result": "fail",
+      "evidence": "No CA policy for high-risk sign-ins",
+      "recommendation": "Create CA policy for high-risk sign-ins"
+    },
+    {
+      "name": "High user risk requires password reset or blocking",
+      "id": "entra-conditionalaccess-high-user-risk-requires-password-reset",
+      "result": "fail",
+      "evidence": "No CA policy for high user risk",
+      "recommendation": "Create CA policy for high user risk"
+    },
+    {
+      "name": "Access from high-risk locations blocked",
+      "id": "entra-conditionalaccess-access-from-high-risk-locations-blocked",
+      "result": "fail",
+      "evidence": "No CA policy restricts locations",
+      "recommendation": "Create CA policy to block high-risk locations"
+    },
+    {
+      "name": "Token Protection enabled",
+      "id": "entra-conditionalaccess-token-protection-enabled",
+      "result": "fail",
+      "evidence": "Token protection not enabled",
+      "recommendation": "Enable token protection in CA"
+    },
+    {
+      "name": "PIM enabled",
+      "id": "entra-pim-pim-enabled",
+      "result": "pass",
+      "evidence": "PIM configured (4 eligible, 32 assigned)",
+      "recommendation": ""
+    },
+    {
+      "name": "JIT activation configured",
+      "id": "entra-pim-jit-activation-configured",
+      "result": "pass",
+      "evidence": "4 eligible role assignments",
+      "recommendation": ""
+    },
+    {
+      "name": "PIM activation requires MFA",
+      "id": "entra-pim-pim-activation-requires-mfa",
+      "result": "fail",
+      "evidence": "MFA not required during PIM activation",
+      "recommendation": "Configure PIM to require MFA"
+    },
+    {
+      "name": "Global Administrator count within limit",
+      "id": "entra-privilegedaccess-global-admin-count-within-limit",
+      "result": "pass",
+      "evidence": "Global Admin count: 5 (within limit)",
+      "recommendation": ""
+    },
+    {
+      "name": "Guest accounts follow least privilege principle",
+      "id": "entra-privilegedaccess-guest-accounts-least-privilege",
+      "result": "needs_manual_review",
+      "evidence": "NA",
+      "recommendation": ""
+    },
+    {
+      "name": "Cloud-native administrator accounts used",
+      "id": "entra-privilegedaccess-cloud-native-admin-accounts",
+      "result": "pass",
+      "evidence": "All 28 admin accounts are cloud-native",
+      "recommendation": ""
+    },
+    {
+      "name": "Access Reviews for privileged roles configured",
+      "id": "entra-accessreviews-privileged-role-access-review-configured",
+      "result": "fail",
+      "evidence": "No privileged role access review found",
+      "recommendation": "Create access review for privileged roles"
+    }
+  ],
+  "informationalControls": [
+    {
+      "name": "Total number of users",
+      "id": "info-total-users",
+      "evidence": "20 total users"
+    },
+    {
+      "name": "Total number of guest users",
+      "id": "info-guest-users",
+      "evidence": "1 guest users"
+    },
+    {
+      "name": "Total number of Microsoft 365 Groups",
+      "id": "info-m365-groups",
+      "evidence": "3 Microsoft 365 Groups"
+    },
+    {
+      "name": "Total number of licensed users",
+      "id": "info-licensed-users",
+      "evidence": "13 licensed users"
+    },
+    {
+      "name": "Total number of unlicensed users",
+      "id": "info-unlicensed-users",
+      "evidence": "7 unlicensed users"
+    },
+    {
+      "name": "Total number of Administrative Units",
+      "id": "info-administrative-units",
+      "evidence": "0 Administrative Units"
+    },
+    {
+      "name": "Total number of risky users",
+      "id": "info-risky-users",
+      "evidence": "0 risky users"
+    },
+    {
+      "name": "Total number of privileged administrator accounts",
+      "id": "info-privileged-admins",
+      "evidence": "28 privileged administrator accounts"
+    },
+    {
+      "name": "Total number of Conditional Access policies",
+      "id": "info-ca-policies",
+      "evidence": "1 Conditional Access policies"
+    },
+    {
+      "name": "Total number of users protected by MFA",
+      "id": "info-mfa-protected",
+      "evidence": "11 users protected by MFA"
+    },
+    {
+      "name": "Total number of users without MFA",
+      "id": "info-mfa-unprotected",
+      "evidence": "7 users without MFA"
+    },
+    {
+      "name": "List of Conditional Access policies and configurations",
+      "id": "info-ca-policies-list",
+      "evidence": "Project Testing - Required MFA (enabled)"
+    },
+    {
+      "name": "Current Microsoft Entra Identity Secure Score",
+      "id": "info-secure-score",
+      "evidence": "Secure Score: undefined / 354"
+    }
+  ]
+}

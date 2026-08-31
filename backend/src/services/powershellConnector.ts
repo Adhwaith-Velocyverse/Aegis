@@ -44,15 +44,9 @@ export const POWERSHELL_MODULE_CONFIGS: Record<string, PowerShellModuleConfig> =
   'Email': {
     name: 'Email',
     displayName: 'Email / Defender for Office 365',
-    description: 'Anti-phishing, anti-malware, Safe Links, Safe Attachments, anti-spam policy config — requires Exchange Online PowerShell',
-    requiredRole: 'Exchange Administrator',
-    cmdlets: [
-      'Get-AntiPhishPolicy',
-      'Get-SafeLinksPolicy',
-      'Get-SafeAttachmentPolicy',
-      'Get-HostedContentFilterPolicy',
-      'Get-MailFlowRule',
-    ],
+    description: 'Exchange Online PowerShell + Microsoft Graph application permissions for Email Security assessment',
+    requiredRole: 'View-Only Organization Management / View-Only Recipients',
+    cmdlets: [],
     connectorType: 'powershell',
     isActive: true,
   },

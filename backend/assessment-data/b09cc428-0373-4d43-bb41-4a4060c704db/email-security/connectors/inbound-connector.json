@@ -1,0 +1,7 @@
+{
+  "endpoint": "inbound-connector",
+  "timestamp": "2026-08-28T10:55:22.066Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Exchange Online authentication failed: Get-InboundConnector : The term 'Get-InboundConnector' is not recognized as the name of a cmdlet, function, script \r\nfile, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct \r\nand try again.\r\nAt line:1 char:1\r\n+ Get-InboundConnector  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-InboundConnector:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
+  "durationMs": 330
+}

@@ -1,0 +1,22 @@
+{
+  "assessmentId": "7336d55b-975a-42b3-849c-d8e680b928e9",
+  "assessmentType": "quick",
+  "collectedAt": "2026-08-28T09:15:35.523Z",
+  "status": "failed",
+  "metrics": {
+    "totalEndpoints": 24,
+    "successfulEndpoints": 0,
+    "failedEndpoints": 1,
+    "controlsPass": 0,
+    "controlsFail": 0,
+    "controlsInfo": 0,
+    "controlsError": 0
+  },
+  "errors": [
+    {
+      "endpoint": "connection",
+      "error": "Exchange Online connection failed: Authentication failed in PowerShell execution",
+      "type": "auth_error"
+    }
+  ]
+}

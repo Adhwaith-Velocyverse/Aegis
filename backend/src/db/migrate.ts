@@ -63,6 +63,7 @@ async function migrate() {
       azure_tenant_id VARCHAR(255),
       azure_client_id VARCHAR(255),
       azure_client_secret_encrypted TEXT,
+      certificate_thumbprint VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
@@ -406,6 +407,7 @@ async function migrate() {
     { sql: 'ALTER TABLE users ADD COLUMN provider_id VARCHAR(255)', col: 'provider_id', table: 'users' },
     { sql: 'ALTER TABLE tenant_connections ADD COLUMN access_token_encrypted TEXT', col: 'access_token_encrypted', table: 'tenant_connections' },
     { sql: 'ALTER TABLE tenant_connections ADD COLUMN token_expires_at TIMESTAMP NULL', col: 'token_expires_at', table: 'tenant_connections' },
+    { sql: 'ALTER TABLE tenant_connections ADD COLUMN certificate_thumbprint VARCHAR(255)', col: 'certificate_thumbprint', table: 'tenant_connections' },
     { sql: 'ALTER TABLE subscriptions ADD COLUMN stripe_customer_id VARCHAR(255)', col: 'stripe_customer_id', table: 'subscriptions' },
     { sql: 'ALTER TABLE subscriptions ADD COLUMN stripe_subscription_id VARCHAR(255)', col: 'stripe_subscription_id', table: 'subscriptions' },
     { sql: 'ALTER TABLE subscription_plans ADD COLUMN stripe_price_id VARCHAR(255)', col: 'stripe_price_id', table: 'subscription_plans' },
@@ -414,6 +416,12 @@ async function migrate() {
     { sql: 'ALTER TABLE detailed_assessment_requests ADD COLUMN assessor_signature VARCHAR(255)', col: 'assessor_signature', table: 'detailed_assessment_requests' },
     { sql: 'ALTER TABLE detailed_assessment_requests ADD COLUMN assessor_sign_off_date TIMESTAMP NULL', col: 'assessor_sign_off_date', table: 'detailed_assessment_requests' },
     { sql: 'ALTER TABLE detailed_assessment_requests ADD COLUMN supporting_docs JSON', col: 'supporting_docs', table: 'detailed_assessment_requests' },
+    { sql: 'ALTER TABLE control_catalog ADD COLUMN area VARCHAR(100)', col: 'area', table: 'control_catalog' },
+    { sql: 'ALTER TABLE control_catalog ADD COLUMN control_type ENUM("pass/fail", "informational") DEFAULT "pass/fail"', col: 'control_type', table: 'control_catalog' },
+    { sql: 'ALTER TABLE control_catalog ADD COLUMN scope ENUM("quick", "detailed", "both") DEFAULT "both"', col: 'scope', table: 'control_catalog' },
+    { sql: 'ALTER TABLE control_catalog ADD COLUMN validation_rule TEXT', col: 'validation_rule', table: 'control_catalog' },
+    { sql: 'ALTER TABLE control_catalog ADD COLUMN required_permissions JSON', col: 'required_permissions', table: 'control_catalog' },
+    { sql: 'ALTER TABLE control_catalog ADD COLUMN commands_used JSON', col: 'commands_used', table: 'control_catalog' },
   ];
 
   for (const stmt of alterStatements) {

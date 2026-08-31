@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Assessment, AssessmentModule, Finding } from '@aegis/shared';
 import { Shield, Download, Share2, AlertTriangle, CheckCircle2, XCircle, HelpCircle, Mail, Copy, Check, Filter, ChevronDown, ChevronUp, User, Clock, Search, ExternalLink, ChevronLeft, ChevronRight, Info, ShieldCheck, FileText, Building2, Users, Target, ArrowUpDown, Eye, BarChart3, TrendingUp, Zap, RefreshCw, Calendar, Award, Star, Crown, Flag, BookOpen, Lightbulb, Settings, Wrench, Hammer, Package, GitBranch, Network, Globe, Server, Database, Lock, Shield as ShieldIcon, Scan, Layers, Activity, Monitor, Cpu, HardDrive, Cloud, Code, Terminal, Layout, PanelTop, Briefcase, ClipboardList, ListChecks, ShieldCheck as ShieldCheckIcon, ShieldOff, ShieldX, ShieldAlert, ShieldQuestion, ShieldPlus, ShieldMinus, Shield as ShieldIcon2, Shield as ShieldIcon3, Shield as ShieldIcon4, Shield as ShieldIcon5, Shield as ShieldIcon6, Shield as ShieldIcon7 } from 'lucide-react';
@@ -12,6 +12,7 @@ type SortOrder = 'ASC' | 'DESC';
 
 export default function ResultsPage() {
   const params = useParams();
+  const router = useRouter();
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [modules, setModules] = useState<AssessmentModule[]>([]);
   const [findings, setFindings] = useState<any[]>([]);
@@ -30,6 +31,8 @@ export default function ResultsPage() {
   const [findingSearch, setFindingSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('severity');
   const [sortOrder, setSortOrder] = useState<SortOrder>('DESC');
+  const [selectedFinding, setSelectedFinding] = useState<any>(null);
+  const [showEvidenceModal, setShowEvidenceModal] = useState(false);
 
   useEffect(() => {
     fetchResults();
@@ -535,17 +538,43 @@ export default function ResultsPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Module Scores</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {modules.map((module) => (
-              <div key={module.id} className="border rounded-lg p-4">
+              <div
+                key={module.id}
+                className={`border rounded-lg p-4 ${module.moduleName === 'Email' ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                onClick={() => module.moduleName === 'Email' ? router.push(`/results/${assessment?.id}/email`) : undefined}
+              >
                 <p className="text-sm font-medium text-gray-900">{module.moduleName}</p>
                 <p className="text-2xl font-bold text-gray-900">{module.moduleScore || 0}/100</p>
                 <div className="flex space-x-2 mt-2 text-xs">
                   <span className="text-green-600">{module.passedCount || 0} passed</span>
                   <span className="text-red-600">{module.failedCount || 0} failed</span>
                 </div>
+                {module.moduleName === 'Email' && (
+                  <p className="text-xs text-primary-600 mt-2 font-medium">Click for details</p>
+                )}
               </div>
             ))}
           </div>
         </div>
+
+        {/* Informational Metrics */}
+        {findings.filter(f => f.result === 'info').length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Info className="w-5 h-5 text-blue-600 mr-2" />
+              Informational Metrics
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {findings.filter(f => f.result === 'info').map((finding) => (
+                <div key={finding.id} className="border rounded-lg p-4 bg-blue-50">
+                  <p className="text-sm font-medium text-gray-900">{finding.control_name || 'Unknown Control'}</p>
+                  <p className="text-xs text-gray-500 mt-1">{finding.module_name}</p>
+                  <p className="text-sm text-blue-800 mt-2">{finding.evidence}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Report Retention Notice */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 flex items-center">
@@ -666,46 +695,61 @@ export default function ResultsPage() {
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Recommendation
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredFindings.map((finding) => (
-                      <tr key={finding.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {finding.control_name || 'Unknown Control'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {finding.control_id || ''}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {finding.module_name || '-'}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(finding.severity || 'medium')}`}>
-                            {finding.severity || 'medium'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getResultColor(finding.result || 'not_applicable')}`}>
-                            {finding.result === 'not_applicable' ? 'N/A' : finding.result || 'unknown'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-600 max-w-xs truncate">
-                          {finding.recommendation || '-'}
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredFindings.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">
-                          No findings match your filters
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
+                       </th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                         Evidence
+                       </th>
+                     </tr>
+                   </thead>
+                   <tbody className="bg-white divide-y divide-gray-200">
+                     {filteredFindings.map((finding) => (
+                       <tr key={finding.id} className="hover:bg-gray-50">
+                         <td className="px-4 py-4 whitespace-nowrap">
+                           <div className="text-sm font-medium text-gray-900">
+                             {finding.control_name || 'Unknown Control'}
+                           </div>
+                           <div className="text-xs text-gray-500">
+                             {finding.control_id || ''}
+                           </div>
+                         </td>
+                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                           {finding.module_name || '-'}
+                         </td>
+                         <td className="px-4 py-4 whitespace-nowrap">
+                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(finding.severity || 'medium')}`}>
+                             {finding.severity || 'medium'}
+                           </span>
+                         </td>
+                         <td className="px-4 py-4 whitespace-nowrap">
+                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getResultColor(finding.result || 'not_applicable')}`}>
+                             {finding.result === 'not_applicable' ? 'N/A' : finding.result || 'unknown'}
+                           </span>
+                         </td>
+                         <td className="px-4 py-4 text-sm text-gray-600 max-w-xs truncate">
+                           {finding.recommendation || '-'}
+                         </td>
+                         <td className="px-4 py-4 whitespace-nowrap">
+                           <button
+                             onClick={() => {
+                               setSelectedFinding(finding);
+                               setShowEvidenceModal(true);
+                             }}
+                             className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
+                           >
+                             <Eye className="w-4 h-4 mr-1" />
+                             View
+                           </button>
+                         </td>
+                       </tr>
+                     ))}
+                     {filteredFindings.length === 0 && (
+                       <tr>
+                         <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                           No findings match your filters
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
                 </table>
               </div>
 
@@ -749,6 +793,74 @@ export default function ResultsPage() {
             <p className="text-gray-600">4. Schedule a re-assessment in 90 days to track improvement</p>
           </div>
         </div>
+
+        {/* Evidence Modal */}
+        {showEvidenceModal && selectedFinding && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-xl p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Control Evidence</h3>
+                <button
+                  onClick={() => {
+                    setShowEvidenceModal(false);
+                    setSelectedFinding(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-auto">
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">{selectedFinding.control_name || 'Unknown Control'}</h4>
+                  <div className="flex space-x-2 mb-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getResultColor(selectedFinding.result || 'not_applicable')}`}>
+                      {selectedFinding.result || 'unknown'}
+                    </span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(selectedFinding.severity || 'medium')}`}>
+                      {selectedFinding.severity || 'medium'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <h5 className="text-sm font-medium text-gray-900 mb-2">Evidence</h5>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
+                    {selectedFinding.evidence || 'No evidence available'}
+                  </p>
+                </div>
+
+                {selectedFinding.recommendation && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-medium text-gray-900 mb-2">Recommendation</h5>
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
+                      {selectedFinding.recommendation}
+                    </p>
+                  </div>
+                )}
+
+                {selectedFinding.details && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-medium text-gray-900 mb-2">Details</h5>
+                    <pre className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg overflow-auto max-h-60">
+                      {JSON.stringify(selectedFinding.details, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {selectedFinding.error && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-medium text-gray-900 mb-2">Error</h5>
+                    <pre className="text-xs text-red-600 bg-red-50 p-3 rounded-lg overflow-auto max-h-60">
+                      {JSON.stringify(selectedFinding.error, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

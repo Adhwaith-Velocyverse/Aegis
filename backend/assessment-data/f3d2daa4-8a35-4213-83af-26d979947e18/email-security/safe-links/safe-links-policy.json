@@ -1,0 +1,7 @@
+{
+  "endpoint": "safe-links-policy",
+  "timestamp": "2026-08-28T10:54:21.632Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-SafeLinksPolicy : The term 'Get-SafeLinksPolicy' is not recognized as the name of a cmdlet, function, script file, \r\nor operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and \r\ntry again.\r\nAt line:1 char:1\r\n+ Get-SafeLinksPolicy  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-SafeLinksPolicy:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
+  "durationMs": 342
+}

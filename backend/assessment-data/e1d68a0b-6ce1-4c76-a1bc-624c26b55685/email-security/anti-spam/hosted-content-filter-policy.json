@@ -1,0 +1,7 @@
+{
+  "endpoint": "hosted-content-filter-policy",
+  "timestamp": "2026-08-28T11:18:18.661Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-HostedContentFilterPolicy : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:32\r\n+ Get-HostedContentFilterPolicy  -ResultSize Unlimited | ConvertTo-Json ...\r\n+                                ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-HostedContentFilterPolicy], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-HostedContentFilterPolicy",
+  "durationMs": 9043
+}

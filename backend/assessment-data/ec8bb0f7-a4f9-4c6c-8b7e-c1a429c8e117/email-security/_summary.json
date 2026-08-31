@@ -1,0 +1,22 @@
+{
+  "assessmentId": "ec8bb0f7-a4f9-4c6c-8b7e-c1a429c8e117",
+  "assessmentType": "quick",
+  "collectedAt": "2026-08-28T07:54:05.405Z",
+  "status": "failed",
+  "metrics": {
+    "totalEndpoints": 24,
+    "successfulEndpoints": 0,
+    "failedEndpoints": 1,
+    "controlsPass": 0,
+    "controlsFail": 0,
+    "controlsInfo": 0,
+    "controlsError": 0
+  },
+  "errors": [
+    {
+      "endpoint": "connection",
+      "error": "Exchange Online connection failed: UnAuthorized\r\nAt C:\\Program \r\nFiles\\WindowsPowerShell\\Modules\\ExchangeOnlineManagement\\3.10.1\\netFramework\\ExchangeOnlineManagement.psm1:595 char:21\r\n+                     throw $_.Exception;\r\n+                     ~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : OperationStopped: (:) [], UnauthorizedAccessException\r\n    + FullyQualifiedErrorId : UnAuthorized",
+      "type": "auth_error"
+    }
+  ]
+}

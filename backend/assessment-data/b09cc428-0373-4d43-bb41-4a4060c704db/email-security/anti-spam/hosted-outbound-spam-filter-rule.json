@@ -1,0 +1,7 @@
+{
+  "endpoint": "hosted-outbound-spam-filter-rule",
+  "timestamp": "2026-08-28T10:55:17.503Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-HostedOutboundSpamFilterRule : The term 'Get-HostedOutboundSpamFilterRule' is not recognized as the name of a \r\ncmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify \r\nthat the path is correct and try again.\r\nAt line:1 char:1\r\n+ Get-HostedOutboundSpamFilterRule  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-HostedOutboundSpamFilterRule:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
+  "durationMs": 313
+}

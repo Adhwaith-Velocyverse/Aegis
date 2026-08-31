@@ -1,0 +1,22 @@
+{
+  "assessmentId": "aab7c585-e5c7-4d48-8180-85d6245e69b1",
+  "assessmentType": "quick",
+  "collectedAt": "2026-08-28T10:30:33.952Z",
+  "status": "failed",
+  "metrics": {
+    "totalEndpoints": 24,
+    "successfulEndpoints": 0,
+    "failedEndpoints": 1,
+    "controlsPass": 0,
+    "controlsFail": 0,
+    "controlsInfo": 0,
+    "controlsError": 0
+  },
+  "errors": [
+    {
+      "endpoint": "connection",
+      "error": "Exchange Online authentication failed: Exchange Online authentication failed: The role assigned to application 5a5a5a87-040f-4df7-a768-0ce0c772cbe0 isn't supported in this scenario. Please check \r\nonline documentation for assigning correct Directory Roles to Azure AD Application for EXO App-Only Authentication.\r\nAt C:\\Program \r\nFiles\\WindowsPowerShell\\Modules\\ExchangeOnlineManagement\\3.10.1\\netFramework\\ExchangeOnlineManagement.psm1:595 char:21\r\n+                     throw $_.Exception;\r\n+                     ~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : OperationStopped: (:) [], SystemException\r\n    + FullyQualifiedErrorId : The role assigned to application 5a5a5a87-040f-4df7-a768-0ce0c772cbe0 isn't supported in \r\n    this scenario. Please check online documentation for assigning correct Directory Roles to Azure AD Application fo  \r\n  r EXO App-Only Authentication.",
+      "type": "auth_error"
+    }
+  ]
+}

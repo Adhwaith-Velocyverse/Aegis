@@ -79,6 +79,24 @@ export class PermissionValidator {
     }
   }
 
+  async validateSecurityPermissions(client: GraphHttpClient): Promise<{ valid: boolean; missingScopes: string[] }> {
+    const requiredScopes = ['SecurityAlert.Read.All', 'SecurityIncident.Read.All'];
+
+    try {
+      await client.request({
+        tenantConnectionId: '',
+        endpoint: '/security/alerts_v2',
+        top: 1,
+      });
+      return { valid: true, missingScopes: [] };
+    } catch (error: any) {
+      if (error.statusCode === 403) {
+        return { valid: false, missingScopes: requiredScopes };
+      }
+      return { valid: true, missingScopes: [] };
+    }
+  }
+
   async validateGraphPermissionsWithPowerShell(
     psService: GraphPowerShellService,
     requiredScopes: string[]
@@ -158,6 +176,15 @@ export class ConnectionHealthService {
       result.details.push(`Permission validation: ${permResult.valid ? 'OK' : 'FAILED'}`);
       if (!permResult.valid) {
         result.errors.push(`Missing scopes: ${permResult.missingScopes.join(', ')}`);
+      }
+
+      const securityPermResult = await permissionValidator.validateSecurityPermissions(graphClient);
+      if (!securityPermResult.valid) {
+        result.details.push(`Security permissions validation: FAILED`);
+        result.errors.push(`Missing security scopes: ${securityPermResult.missingScopes.join(', ')}`);
+        if (result.status === M365ConnectionState.HEALTHY) {
+          result.status = M365ConnectionState.DEGRADED;
+        }
       }
     }
 

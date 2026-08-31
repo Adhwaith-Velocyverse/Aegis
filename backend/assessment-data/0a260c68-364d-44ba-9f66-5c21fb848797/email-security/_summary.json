@@ -1,0 +1,22 @@
+{
+  "assessmentId": "0a260c68-364d-44ba-9f66-5c21fb848797",
+  "assessmentType": "quick",
+  "collectedAt": "2026-08-28T09:51:12.703Z",
+  "status": "failed",
+  "metrics": {
+    "totalEndpoints": 24,
+    "successfulEndpoints": 0,
+    "failedEndpoints": 1,
+    "controlsPass": 0,
+    "controlsFail": 0,
+    "controlsInfo": 0,
+    "controlsError": 0
+  },
+  "errors": [
+    {
+      "endpoint": "connection",
+      "error": "Exchange Online app-only authentication requires a registered certificate. Either upload a certificate to this tenant connection, or use delegated authentication with Exchange Online scopes.",
+      "type": "auth_error"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "endpoint": "/users?$filter=assignedLicenses/$count eq 0&$count=true",
+  "timestamp": "2026-08-28T07:45:34.817Z",
+  "status": "success",
+  "data": [
+    {
+      "businessPhones": [],
+      "displayName": "TestShare",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": "TestShare@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "TestShare@velocyversetest01.onmicrosoft.com",
+      "id": "194149b4-3695-45f7-84c9-f853f02d5c18"
+    },
+    {
+      "businessPhones": [],
+      "displayName": "Demo User",
+      "givenName": "Demo",
+      "jobTitle": null,
+      "mail": null,
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": "User",
+      "userPrincipalName": "Demo@velocyversetest01.onmicrosoft.com",
+      "id": "3c60d011-f183-403d-ac2f-bb8e946e3af7"
+    },
+    {
+      "businessPhones": [],
+      "displayName": "UserA",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": null,
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "UserA@velocyversetest01.onmicrosoft.com",
+      "id": "8f5f7641-6a4a-4e0b-9348-2a911298ad17"
+    },
+    {
+      "businessPhones": [],
+      "displayName": "kennethrojasarthur",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": "kennethrojasarthur@gmail.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "kennethrojasarthur_gmail.com#EXT#@velocyversetest01.onmicrosoft.com",
+      "id": "95894590-2a1a-4d5a-9663-66cd1b5687cb"
+    },
+    {
+      "businessPhones": [],
+      "displayName": "UserUU",
+      "givenName": null,
+      "jobTitle": null,
+      "mail": "TestEmail@velocyversetest01.onmicrosoft.com",
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "UserUU@velocyversetest01.onmicrosoft.com",
+      "id": "aaab35f2-65c5-460a-8653-90a7cbd42684"
+    },
+    {
+      "businessPhones": [],
+      "displayName": "Admin",
+      "givenName": "Admin",
+      "jobTitle": null,
+      "mail": null,
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": null,
+      "userPrincipalName": "Admin@velocyversetest01.onmicrosoft.com",
+      "id": "f1249b82-1f7b-458c-8ef4-d571e6b5661f"
+    },
+    {
+      "businessPhones": [],
+      "displayName": "Suseandhiran Natarajan",
+      "givenName": "Suseandhiran",
+      "jobTitle": null,
+      "mail": null,
+      "mobilePhone": null,
+      "officeLocation": null,
+      "preferredLanguage": null,
+      "surname": "Natarajan",
+      "userPrincipalName": "susee_Velocyverse.com#EXT#@velocyversetest01.onmicrosoft.com",
+      "id": "fd618d0f-5720-4ada-abe9-7e83c6e0799f"
+    }
+  ]
+}

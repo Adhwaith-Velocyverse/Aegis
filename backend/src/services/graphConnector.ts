@@ -90,14 +90,23 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
   'Email': {
     name: 'Email',
     displayName: 'Email / Defender for Office 365',
-    description: 'Anti-phishing, anti-malware, Safe Links, Safe Attachments, anti-spam',
-    scopes: ['SecurityEvents.Read.All', 'Mail.Read', 'ThreatAssessment.Read.All'],
-    endpoints: [
-      '/security/alerts?$filter=source/name eq \'Office 365 Security & Compliance\'',
-      '/me/mailFolders/inbox/messageRules',
+    description: 'Anti-phishing, anti-malware, Safe Links, Safe Attachments, anti-spam policy config — requires Exchange Online PowerShell and Microsoft Graph application permissions',
+    scopes: [
+      'User.Read.All',
+      'GroupMember.Read.All',
+      'RoleManagement.Read.Directory',
+      'SecurityAlert.Read.All',
+      'SecurityIncident.Read.All',
     ],
-    criticalControls: ['/security/alerts'],
-    connectorType: 'powershell', // No Graph API - requires PowerShell connector
+    endpoints: [
+      '/users',
+      '/groups/{id}/members',
+      '/directoryRoles',
+      '/security/alerts_v2',
+      '/security/incidents',
+    ],
+    criticalControls: [],
+    connectorType: 'powershell',
     isActive: true,
   },
   'Intune': {

@@ -1,0 +1,123 @@
+{
+  "endpoint": "graph-directory-roles",
+  "timestamp": "2026-08-31T05:56:09.931Z",
+  "status": "success",
+  "data": {
+    "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#directoryRoles",
+    "value": [
+      {
+        "id": "077eb471-236e-4fb3-96a0-c6a7b8846e18",
+        "deletedDateTime": null,
+        "description": "Manage or purge data from Microsoft 365 when accessing from the Microsoft Purview portal.",
+        "displayName": "Purview Workload Content Administrator",
+        "roleTemplateId": "3f04f91a-4ad7-4bd3-bcfa-49882ea1a88a"
+      },
+      {
+        "id": "09390a81-e173-4dac-b39f-b3176ee928ed",
+        "deletedDateTime": null,
+        "description": "Read all aspects of Microsoft 365 Copilot and AI-related enterprise services in Microsoft 365.",
+        "displayName": "AI Reader",
+        "roleTemplateId": "1fe13547-53f6-408d-ac04-7f8eed167b38"
+      },
+      {
+        "id": "0c730223-bcd3-46ea-a189-000fd7a67f77",
+        "deletedDateTime": null,
+        "description": "Manage all aspects of Microsoft 365 Copilot and AI-related enterprise services in Microsoft 365.",
+        "displayName": "AI Administrator",
+        "roleTemplateId": "d2562ede-74db-457e-a7b6-544e236ebb61"
+      },
+      {
+        "id": "0fc424a9-73ff-41cf-90dc-2c6215a66b85",
+        "deletedDateTime": null,
+        "description": "Can read and manage compliance configuration and reports in Microsoft Entra ID and Microsoft 365.",
+        "displayName": "Compliance Administrator",
+        "roleTemplateId": "17315797-102d-40b4-93e0-432062caca18"
+      },
+      {
+        "id": "1d945866-246f-461d-a222-f9577ae3fb19",
+        "deletedDateTime": null,
+        "description": "Can manage all aspects of the Intune product.",
+        "displayName": "Intune Administrator",
+        "roleTemplateId": "3a2c62db-5318-420d-8d74-23affee5d9d5"
+      },
+      {
+        "id": "315fae71-f55b-4df1-b2d8-3c5d1241bff6",
+        "deletedDateTime": null,
+        "description": "Can manage Conditional Access capabilities.",
+        "displayName": "Conditional Access Administrator",
+        "roleTemplateId": "b1be1c3e-b65d-4f19-8427-f6fa0d97feb9"
+      },
+      {
+        "id": "4e06b030-b159-4dba-9c7b-a3b111c406a8",
+        "deletedDateTime": null,
+        "description": "Can create and manage the authentication methods policy, tenant-wide MFA settings, password protection policy, and verifiable credentials.",
+        "displayName": "Authentication Policy Administrator",
+        "roleTemplateId": "0526716b-113d-4c15-b2c8-68e3c22b9f80"
+      },
+      {
+        "id": "61bd59ee-9d0d-4ce1-8a7e-32819f4cb211",
+        "deletedDateTime": null,
+        "description": "Can manage role assignments in Microsoft Entra ID, and all aspects of Privileged Identity Management.",
+        "displayName": "Privileged Role Administrator",
+        "roleTemplateId": "e8611ab8-c189-46e8-94e1-60213ab1f814"
+      },
+      {
+        "id": "63d0ee2e-adc2-4e57-a3bc-f371d8e8dfc1",
+        "deletedDateTime": null,
+        "description": "Users assigned to this role are added to the local administrators group on Microsoft Entra joined devices.",
+        "displayName": "Azure AD Joined Device Local Administrator",
+        "roleTemplateId": "9f06204d-73c1-4d4c-880a-6edb90606fd8"
+      },
+      {
+        "id": "726c3909-7964-4e9a-a51a-8af10ce0a595",
+        "deletedDateTime": null,
+        "description": "Can manage all aspects of the Exchange product.",
+        "displayName": "Exchange Administrator",
+        "roleTemplateId": "29232cdf-9323-42fd-ade2-1d097af3e4de"
+      },
+      {
+        "id": "a9228714-3a70-423b-a6e3-da3951675b74",
+        "deletedDateTime": null,
+        "description": "Security Administrator allows ability to read and manage security configuration and reports.",
+        "displayName": "Security Administrator",
+        "roleTemplateId": "194ae4cb-b126-40b2-bd5b-6091b380977d"
+      },
+      {
+        "id": "c11c78ec-ee37-49d9-8f96-133f4f0d3241",
+        "deletedDateTime": null,
+        "description": "Can create and manage all aspects of app registrations and enterprise apps.",
+        "displayName": "Application Administrator",
+        "roleTemplateId": "9b895d92-2cd3-44c7-9d02-a6ac2d5ea5c3"
+      },
+      {
+        "id": "d00f3f45-118e-4628-ad3d-5a44df5377ab",
+        "deletedDateTime": null,
+        "description": "Read and edit data from Microsoft 365 when accessing from the Microsoft Purview portal.",
+        "displayName": "Purview Workload Content Writer",
+        "roleTemplateId": "02d5655b-c1cf-4e5f-98da-5fb919085bf6"
+      },
+      {
+        "id": "d43e2ae6-cb6b-4f3d-9c28-b6e09a0d91ba",
+        "deletedDateTime": null,
+        "description": "Can read basic directory information. Commonly used to grant directory read access to applications and guests.",
+        "displayName": "Directory Readers",
+        "roleTemplateId": "88d8e3e3-8f55-4a1e-953a-9b9898b8876b"
+      },
+      {
+        "id": "de6b6017-ce82-40d9-b50a-2bda26277147",
+        "deletedDateTime": null,
+        "description": "Can manage all aspects of users and groups, including resetting passwords for limited admins.",
+        "displayName": "User Administrator",
+        "roleTemplateId": "fe930be7-5e62-47db-91af-98c3a49a38b1"
+      },
+      {
+        "id": "e3a69f3a-e3ef-4e0a-bf68-7c4df2b578e8",
+        "deletedDateTime": null,
+        "description": "Can manage all aspects of Microsoft Entra ID and Microsoft services that use Microsoft Entra identities.",
+        "displayName": "Global Administrator",
+        "roleTemplateId": "62e90394-69f5-4237-9190-012177145e10"
+      }
+    ]
+  },
+  "durationMs": 1450
+}

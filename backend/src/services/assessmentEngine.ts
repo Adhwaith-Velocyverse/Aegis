@@ -4,9 +4,8 @@ import { calculateAssessmentScore } from './scoringEngine';
 import { AssessmentType } from '@aegis/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { createEntraCollector, EntraCollectionResult } from './entraCollector';
-import { createEmailCollector, EmailCollectionResult } from './emailCollector';
-import { validateEmailCollectionResult, EmailAssessmentData } from './emailDataValidator';
-import { evaluateEmailControl, EMAIL_CONTROLS } from './emailControlEvaluator';
+import { createEmailSecurityCollector, EmailSecurityCollectionResult } from './emailSecurityCollector';
+import { evaluateEmailSecurityControl, EMAIL_SECURITY_CONTROLS } from './emailSecurityEvaluator';
 
 export async function runAssessment(assessmentId: string, type: AssessmentType, tenantConnectionId: string) {
   try {
@@ -48,9 +47,9 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
           }
         }
 
-        // Use EmailCollector for Email module
+        // Use EmailSecurityCollector for Email module
         if (moduleName === 'Email') {
-          const emailResult = await runEmailAssessment(assessmentId, tenantConnectionId, type, moduleId, controlsToEvaluate);
+          const emailResult = await runEmailSecurityAssessment(assessmentId, tenantConnectionId, type, moduleId, controlsToEvaluate);
           if (emailResult) {
             continue;
           }
@@ -489,15 +488,15 @@ async function runEntraAssessment(
   }
 }
 
-async function runEmailAssessment(
+async function runEmailSecurityAssessment(
   assessmentId: string,
   tenantConnectionId: string,
   type: AssessmentType,
   moduleId: string,
   controlsToEvaluate: any[]
 ): Promise<boolean> {
-  const emailCollector = await createEmailCollector(tenantConnectionId);
-  if (!emailCollector) {
+  const collector = await createEmailSecurityCollector(tenantConnectionId);
+  if (!collector) {
     await query(
       'UPDATE assessment_modules SET collection_status = ?, raw_data_path = ? WHERE id = ?',
       ['failed', JSON.stringify({ reason: 'Exchange Online connector not available' }), moduleId]
@@ -524,15 +523,13 @@ async function runEmailAssessment(
   }
 
   try {
-    const result = type === 'quick'
-      ? await emailCollector.collectForQuickAssessment()
-      : await emailCollector.collectAll();
+    const result = type === 'detailed'
+      ? await collector.collectDetailed()
+      : await collector.collectQuick();
 
-    emailCollector.saveDataToFiles(assessmentId, result);
+    collector.saveDataToFiles(assessmentId, result);
 
-    const validation = validateEmailCollectionResult(result);
     const collectionStatus = result.status === 'completed' ? 'completed' : result.status === 'partial' ? 'partial' : 'failed';
-
     await query(
       'UPDATE assessment_modules SET collection_status = ?, raw_data_path = ? WHERE id = ?',
       [collectionStatus, JSON.stringify(result), moduleId]
@@ -552,7 +549,7 @@ async function runEmailAssessment(
             control.id,
             'error',
             control.severity,
-            `Email assessment authentication failed: ${authError.message}`,
+            `Email security assessment authentication failed: ${authError.error}`,
             'Reconnect the tenant to refresh authentication tokens, then retry the assessment.',
             'automated',
           ]
@@ -562,32 +559,24 @@ async function runEmailAssessment(
     }
 
     for (const control of emailControls) {
-      let controlResult: any;
+      const controlResult = evaluateEmailSecurityControl(control.control_name, result.data, result.rawResponses);
 
-      if (!validation.valid) {
-        controlResult = {
-          result: 'error',
-          evidence: `Email data validation failed: ${validation.errors.map((e: any) => e.message || e).join(', ')}`,
-          recommendation: 'Data collection encountered errors. Review raw data for details.',
-          error: { type: 'validation_error', message: 'JSON validation failed' },
-        };
-      } else {
-        const evalResult = evaluateEmailControl(control.id, result);
-        if (evalResult) {
-          controlResult = {
-            result: evalResult.result,
-            evidence: evalResult.evidence,
-            recommendation: evalResult.recommendation,
-            details: evalResult.details,
-            error: evalResult.error,
-          };
-        } else {
-          controlResult = {
-            result: 'not_applicable',
-            evidence: 'Control not found in Email control evaluator',
-            recommendation: '',
-          };
-        }
+      if (!controlResult) {
+        await query(
+          `INSERT INTO findings (id, assessment_module_id, control_catalog_id, result, severity, evidence, recommendation, source)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            uuidv4(),
+            moduleId,
+            control.id,
+            'not_applicable',
+            control.severity,
+            'Control not found in Email security control evaluator',
+            '',
+            'automated',
+          ]
+        );
+        continue;
       }
 
       await query(
@@ -600,7 +589,7 @@ async function runEmailAssessment(
           controlResult.result,
           control.severity,
           controlResult.evidence,
-          controlResult.recommendation,
+          controlResult.recommendation || '',
           'automated',
         ]
       );
@@ -608,7 +597,7 @@ async function runEmailAssessment(
 
     return true;
   } catch (error) {
-    console.error('Email assessment error:', error);
+    console.error('Email security assessment error:', error);
     await query('UPDATE assessment_modules SET collection_status = ? WHERE id = ?', ['failed', moduleId]);
 
     const moduleControls = controlsToEvaluate.filter((c: any) => c.module_name === 'Email');
@@ -622,7 +611,7 @@ async function runEmailAssessment(
           control.id,
           'error',
           control.severity,
-          `Email assessment failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Email security assessment failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           'Check Exchange Online connectivity and permissions.',
           'automated',
         ]

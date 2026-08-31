@@ -1,0 +1,7 @@
+{
+  "endpoint": "hosted-outbound-spam-filter-rule",
+  "timestamp": "2026-08-31T05:48:37.937Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-HostedOutboundSpamFilterRule : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:35\r\n+ Get-HostedOutboundSpamFilterRule  -ResultSize Unlimited | ConvertTo-J ...\r\n+                                   ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-HostedOutboundSpamFilterRule], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-HostedOutboundSpamFilterRule",
+  "durationMs": 10736
+}

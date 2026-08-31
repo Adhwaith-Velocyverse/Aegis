@@ -64,6 +64,7 @@ export class Microsoft365ConnectionManager {
       }
     }
 
+    await this.updateState(M365ConnectionState.VALIDATING);
     await this.updateState(M365ConnectionState.AUTHENTICATING);
     await this.authenticate();
     await this.updateState(M365ConnectionState.CONNECTED);

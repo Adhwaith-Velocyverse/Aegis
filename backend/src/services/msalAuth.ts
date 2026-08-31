@@ -94,6 +94,14 @@ export async function exchangeCodeForTokens(code: string, tenantId: string, scop
 }
 
 export async function getAccessTokenForTenant(tenantConnectionId: string): Promise<string> {
+  return getAccessTokenForTenantAndResource(tenantConnectionId, 'https://graph.microsoft.com/.default');
+}
+
+export async function getExchangeOnlineAccessTokenForTenant(tenantConnectionId: string): Promise<string> {
+  return getAccessTokenForTenantAndResource(tenantConnectionId, 'https://outlook.office365.com/.default');
+}
+
+async function getAccessTokenForTenantAndResource(tenantConnectionId: string, resource: string): Promise<string> {
   try {
     const connections = await query('SELECT * FROM tenant_connections WHERE id = ?', [tenantConnectionId]);
     if (connections.length === 0) {
@@ -102,10 +110,9 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
 
     const connection = connections[0] as any;
 
-    // If direct credentials are stored, use client credentials flow
     if (connection.azure_tenant_id && connection.azure_client_id && connection.azure_client_secret_encrypted) {
       const clientSecret = decryptToken(connection.azure_client_secret_encrypted);
-      
+
       const tenantMsalConfig = {
         auth: {
           clientId: connection.azure_client_id,
@@ -113,11 +120,11 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
           authority: `https://login.microsoftonline.com/${connection.azure_tenant_id}`,
         },
       };
-      
+
       const tenantCca = new ConfidentialClientApplication(tenantMsalConfig);
-      
+
       const tokenResponse = await tenantCca.acquireTokenByClientCredential({
-        scopes: ['https://graph.microsoft.com/.default'],
+        scopes: [resource],
       });
 
       if (!tokenResponse) {
@@ -126,24 +133,22 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
       return tokenResponse.accessToken;
     }
 
-    // OAuth flow - check if we have a valid cached access token
     if (connection.access_token_encrypted && connection.token_expires_at) {
       const tokenExpiresAt = new Date(connection.token_expires_at);
       const now = new Date();
-      
+
       if (now < tokenExpiresAt && (tokenExpiresAt.getTime() - now.getTime()) > 5 * 60 * 1000) {
         return decryptToken(connection.access_token_encrypted);
       }
     }
 
-    // OAuth flow - use refresh token if available
     if (connection.refresh_token_encrypted) {
       const refreshToken = decryptToken(connection.refresh_token_encrypted);
 
       try {
         const tokenResponse = await cca.acquireTokenByRefreshToken({
           refreshToken,
-          scopes: OAUTH_SCOPES,
+          scopes: [resource],
         });
 
         if (!tokenResponse) {
@@ -154,25 +159,24 @@ export async function getAccessTokenForTenant(tenantConnectionId: string): Promi
         const newRefreshToken = response.refreshToken || refreshToken;
         const expiresIn = response.expiresIn || 3600;
 
-        await storeTokens(tenantConnectionId, tokenResponse.accessToken, newRefreshToken, OAUTH_SCOPES, expiresIn);
+        await storeTokens(tenantConnectionId, tokenResponse.accessToken, newRefreshToken, [resource], expiresIn);
 
         return tokenResponse.accessToken;
       } catch (refreshError: any) {
         console.error('Refresh token rotation failed:', refreshError);
-        
+
         if (refreshError.errorCode === 'bad_token' || refreshError.errorCode === 'interaction_required') {
           await query(
             'UPDATE tenant_connections SET connection_status = ? WHERE id = ?',
             ['needs_attention', tenantConnectionId]
           );
         }
-        
+
         const message = refreshError.message || 'Refresh token rotation failed';
         throw new AuthenticationError('AUTHENTICATION_ERROR', message, true, refreshError);
       }
     }
 
-    // No refresh token available
     throw new AuthenticationError(
       'AUTHENTICATION_ERROR',
       `No refresh token available for tenant connection ${tenantConnectionId}. Re-authentication required.`,
@@ -267,3 +271,5 @@ function decryptToken(encryptedToken: string): string {
 
   return decrypted;
 }
+
+export { encryptToken as encryptTokenForStorage, decryptToken as decryptStoredToken };

@@ -1,0 +1,6 @@
+{
+  "endpoint": "/groups?$filter=groupTypes/any(c:c eq 'DynamicMembership')&$count=true",
+  "timestamp": "2026-08-28T07:38:14.448Z",
+  "status": "success",
+  "data": []
+}

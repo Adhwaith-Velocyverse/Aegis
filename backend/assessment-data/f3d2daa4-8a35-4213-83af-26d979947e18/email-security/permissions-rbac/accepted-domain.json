@@ -1,0 +1,7 @@
+{
+  "endpoint": "accepted-domain",
+  "timestamp": "2026-08-28T10:54:22.888Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-AcceptedDomain : The term 'Get-AcceptedDomain' is not recognized as the name of a cmdlet, function, script file, \r\nor operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and \r\ntry again.\r\nAt line:1 char:1\r\n+ Get-AcceptedDomain  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-AcceptedDomain:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
+  "durationMs": 298
+}

@@ -1,0 +1,7 @@
+{
+  "endpoint": "exo-mailbox",
+  "timestamp": "2026-08-28T10:55:24.408Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-EXOMailbox : A parameter cannot be found that matches parameter name 'All'.\r\nAt line:1 char:17\r\n+ Get-EXOMailbox  -All -ResultSize Unlimited | ConvertTo-Json -Depth 10\r\n+                 ~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-EXOMailbox], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Microsoft.Exchange.Management.RestApiClient.GetExoMailbox",
+  "durationMs": 1706
+}

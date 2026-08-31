@@ -1,0 +1,7 @@
+{
+  "endpoint": "safe-attachment-policy",
+  "timestamp": "2026-08-31T05:54:27.215Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-SafeAttachmentPolicy : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:27\r\n+ Get-SafeAttachmentPolicy  -ResultSize Unlimited | ConvertTo-Json -Dep ...\r\n+                           ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-SafeAttachmentPolicy], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-SafeAttachmentPolicy",
+  "durationMs": 14660
+}

@@ -48,6 +48,7 @@ export default function ConnectTenantPage() {
   const [modules, setModules] = useState<ModuleConfig[]>([]);
   const [healthStatus, setHealthStatus] = useState<string | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [connectSuccess, setConnectSuccess] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -107,6 +108,7 @@ export default function ConnectTenantPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setConnectSuccess(null);
 
     try {
       const payload: any = {
@@ -126,20 +128,20 @@ export default function ConnectTenantPage() {
       if (response.data.data.authUrl) {
         // OAuth flow - redirect to consent page first
         const connectionId = response.data.data.connectionId;
-        // Determine assessment type based on URL params or default to quick
         const assessmentType = searchParams.get('type') || 'quick';
         router.push(`/consent?connectionId=${connectionId}&type=${assessmentType}`);
       } else {
-        // Direct connection success
+        // Direct connection - validation completed on backend
         setLoading(false);
-        setConnected(true);
+        setConnectSuccess(response.data.data.message || 'Tenant connected successfully');
         setConnectionId(response.data.data.connectionId);
-        fetchConnections();
+        await fetchConnections();
       }
     } catch (error: any) {
       console.error('Failed to connect tenant:', error);
       setError(error.response?.data?.error || 'Failed to connect tenant. Please try again.');
       setLoading(false);
+      await fetchConnections();
     }
   };
 
@@ -208,11 +210,11 @@ export default function ConnectTenantPage() {
     }
   };
 
-  if (connected && connectionId) {
+  if (connectSuccess && connectionId) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="bg-white rounded-xl shadow-sm border p-8 text-center mb-8">
             <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Tenant Connected Successfully</h1>
             <p className="text-gray-600 mb-8">
@@ -225,6 +227,12 @@ export default function ConnectTenantPage() {
                 className="bg-primary-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 {loading ? 'Verifying...' : 'Go to Dashboard'}
+              </button>
+              <button
+                onClick={() => { setConnectSuccess(null); setConnectionId(null); }}
+                className="bg-gray-200 text-gray-800 py-2 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                Connect Another Tenant
               </button>
             </div>
           </div>
@@ -251,6 +259,18 @@ export default function ConnectTenantPage() {
               <div>
                 <h3 className="text-sm font-medium text-red-800">Connection Failed</h3>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {connectSuccess && (
+          <div className="max-w-6xl mx-auto px-4 mb-8">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start">
+              <CheckCircle2 className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-green-800">Connection Successful</h3>
+                <p className="text-sm text-green-700 mt-1">{connectSuccess}</p>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import { query } from '../db/connection';
-import { getAccessTokenForTenant } from './msalAuth';
+import { getAccessTokenForTenant, getExchangeOnlineAccessTokenForTenant } from './msalAuth';
 import { maskPII } from './encryption';
 import { AuthenticationMode, CollectionError, AuthenticationError } from '../types/m365';
 
@@ -49,6 +49,8 @@ export class ExchangeOnlineService {
   private certificateThumbprint?: string;
   private connected = false;
   private connectionPromise: Promise<void> | null = null;
+  private psProcess: ChildProcess | null = null;
+  private psReady: Promise<void> | null = null;
 
   constructor(
     tenantConnectionId: string,
@@ -79,20 +81,13 @@ export class ExchangeOnlineService {
     }
 
     let script = `Import-Module ExchangeOnlineManagement -ErrorAction Stop\n`;
-    script += `Connect-ExchangeOnline -UserPrincipalName "app@${this.tenantId}.onmicrosoft.com"`;
 
     if (this.authMode === AuthenticationMode.APPLICATION && this.certificateThumbprint) {
-      script += ` -AppId "${this.clientId}" -CertificateThumbprint "${this.certificateThumbprint}" -Organization "${this.tenantId}"`;
+      script += `Connect-ExchangeOnline -AppId "${this.clientId}" -CertificateThumbprint "${this.certificateThumbprint}" -Organization "${this.tenantId}"`;
     } else {
-      try {
-        const accessToken = await getAccessTokenForTenant(this.tenantConnectionId);
-        script += ` -AccessToken "${accessToken}"`;
-      } catch (error: any) {
-        if (error instanceof AuthenticationError) {
-          throw error;
-        }
-        throw new AuthenticationError('AUTHENTICATION_ERROR', error?.message || 'Failed to obtain Exchange Online access token', true, error);
-      }
+      const accessToken = await getExchangeOnlineAccessTokenForTenant(this.tenantConnectionId);
+      const userPrincipalName = await this.resolveUserPrincipalName(accessToken);
+      script += `Connect-ExchangeOnline -UserPrincipalName "${userPrincipalName}" -AccessToken "${accessToken}"`;
     }
 
     const result = await this.executeScript(script);
@@ -101,9 +96,18 @@ export class ExchangeOnlineService {
       if (message.toLowerCase().includes('permission') || message.toLowerCase().includes('authorization') || message.toLowerCase().includes('403')) {
         throw new AuthenticationError('AUTHORIZATION_ERROR', `Exchange Online connection failed: ${message}`);
       }
+      if (message.toLowerCase().includes('authentication') || message.toLowerCase().includes('unauthorized')) {
+        throw new AuthenticationError('AUTHENTICATION_ERROR', `Exchange Online authentication failed: ${message}`);
+      }
       throw new AuthenticationError('COMMAND_ERROR', `Exchange Online connection failed: ${message}`);
     }
     this.connected = true;
+  }
+
+  private async resolveUserPrincipalName(_accessToken: string): Promise<string> {
+    const conn = await query('SELECT tenant_id FROM tenant_connections WHERE id = ?', [this.tenantConnectionId]);
+    const tenantDomain = (conn[0] as any)?.tenant_id || this.tenantId;
+    return `admin@${tenantDomain}`;
   }
 
   async executeCommand(cmdlet: string, parameters: Record<string, string | number | boolean | string[]> = {}): Promise<any[]> {
@@ -112,14 +116,12 @@ export class ExchangeOnlineService {
     }
 
     if (cmdlet === 'Disconnect-ExchangeOnline') {
-      const script = `${cmdlet} -Confirm:$false | ConvertTo-Json -Depth 3`;
+      const script = `Import-Module ExchangeOnlineManagement -ErrorAction Stop\n${cmdlet} -Confirm:$false | ConvertTo-Json -Depth 3`;
       const result = await this.executeScript(script);
       this.connected = false;
       this.connectionPromise = null;
       return [];
     }
-
-    await this.connect();
 
     const paramStrings = Object.entries(parameters)
       .filter(([, v]) => v !== undefined && v !== null && v !== '')
@@ -138,12 +140,36 @@ export class ExchangeOnlineService {
       .filter(Boolean)
       .join(' ');
 
-    const needsAll = ['Get-EXOMailbox', 'Get-Mailbox', 'Get-CASMailbox', 'Get-EXOCASMailbox', 'Get-DistributionGroup', 'Get-TransportRule'].includes(cmdlet);
-    let script = `${cmdlet} ${paramStrings}`;
-    if (needsAll) {
-      script += ' -All -ResultSize Unlimited';
+    const supportsAllAndResultSize = new Set([
+      'Get-Mailbox',
+      'Get-CASMailbox',
+      'Get-DistributionGroup',
+    ]);
+
+    const supportsResultSizeOnly = new Set([
+      'Get-EXOMailbox',
+      'Get-EXOCASMailbox',
+      'Get-UnifiedGroup',
+      'Get-DynamicDistributionGroup',
+    ]);
+
+    let commandScript = `${cmdlet} ${paramStrings}`.trim();
+    if (supportsAllAndResultSize.has(cmdlet)) {
+      commandScript += ' -All -ResultSize Unlimited';
+    } else if (supportsResultSizeOnly.has(cmdlet)) {
+      commandScript += ' -ResultSize Unlimited';
     }
-    script += ' | ConvertTo-Json -Depth 10';
+    commandScript += ' | ConvertTo-Json -Depth 10';
+
+    let script = `Import-Module ExchangeOnlineManagement -ErrorAction Stop\n`;
+    if (this.authMode === AuthenticationMode.APPLICATION && this.certificateThumbprint) {
+      script += `Connect-ExchangeOnline -AppId "${this.clientId}" -CertificateThumbprint "${this.certificateThumbprint}" -Organization "${this.tenantId}"\n`;
+    } else {
+      const accessToken = await getExchangeOnlineAccessTokenForTenant(this.tenantConnectionId);
+      const userPrincipalName = await this.resolveUserPrincipalName(accessToken);
+      script += `Connect-ExchangeOnline -UserPrincipalName "${userPrincipalName}" -AccessToken "${accessToken}"\n`;
+    }
+    script += commandScript;
 
     const result = await this.executeScript(script);
     if (result.errors.length > 0) {
@@ -193,19 +219,20 @@ export class ExchangeOnlineService {
       const errors: CollectionError[] = [];
 
       if (stderr && stderr.trim().length > 0) {
+        const trimmedStderr = stderr.trim().substring(0, 2000);
         const lower = stderr.toLowerCase();
         if (lower.includes('permission') || lower.includes('authorization') || lower.includes('403')) {
           errors.push({
             type: 'permission_denied',
-            message: 'Permission denied in PowerShell execution',
+            message: `Exchange Online permission denied: ${trimmedStderr}`,
             operation: 'PowerShellExecute',
             statusCode: 403,
             retryable: false,
           });
-        } else if (lower.includes('connect') || lower.includes('authentication')) {
+        } else if (lower.includes('connect') || lower.includes('authentication') || lower.includes('unauthorized')) {
           errors.push({
             type: 'auth_error',
-            message: 'Authentication failed in PowerShell execution',
+            message: `Exchange Online authentication failed: ${trimmedStderr}`,
             operation: 'PowerShellExecute',
             statusCode: 401,
             retryable: false,
@@ -213,7 +240,7 @@ export class ExchangeOnlineService {
         } else {
           errors.push({
             type: 'api_error',
-            message: stderr.trim().substring(0, 500),
+            message: trimmedStderr,
             operation: 'PowerShellExecute',
             retryable: false,
           });
@@ -265,10 +292,22 @@ export async function getExchangeOnlineService(tenantConnectionId: string): Prom
   const conn = connections[0] as any;
   const tenantId = conn.tenant_id;
   const clientId = conn.azure_client_id;
-  const authMode = (conn.certificate_thumbprint || conn.azure_client_secret_encrypted)
-    ? AuthenticationMode.APPLICATION
-    : AuthenticationMode.DELEGATED;
-  const certificateThumbprint = conn.certificate_thumbprint || undefined;
 
-  return new ExchangeOnlineService(tenantConnectionId, tenantId, clientId, authMode, certificateThumbprint);
+  if (conn.certificate_thumbprint) {
+    return new ExchangeOnlineService(tenantConnectionId, tenantId, clientId, AuthenticationMode.APPLICATION, conn.certificate_thumbprint);
+  }
+
+  if (conn.azure_client_secret_encrypted) {
+    return new ExchangeOnlineService(tenantConnectionId, tenantId, clientId, AuthenticationMode.APPLICATION);
+  }
+
+  if (conn.refresh_token_encrypted) {
+    return new ExchangeOnlineService(tenantConnectionId, tenantId, clientId, AuthenticationMode.DELEGATED);
+  }
+
+  throw new AuthenticationError(
+    'AUTHENTICATION_ERROR',
+    'No valid authentication method available for Exchange Online. Configure certificate-based app-only auth, client secret app-only auth, or delegated OAuth with Exchange Online scopes.',
+    true
+  );
 }

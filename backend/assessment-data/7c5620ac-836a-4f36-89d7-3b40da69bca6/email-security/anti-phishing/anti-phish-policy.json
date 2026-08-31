@@ -1,0 +1,7 @@
+{
+  "endpoint": "anti-phish-policy",
+  "timestamp": "2026-08-28T11:26:09.538Z",
+  "status": "error",
+  "error": "Exchange Online command failed: Get-AntiPhishPolicy : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:22\r\n+ Get-AntiPhishPolicy  -ResultSize Unlimited | ConvertTo-Json -Depth 10\r\n+                      ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-AntiPhishPolicy], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-AntiPhishPolicy",
+  "durationMs": 8163
+}

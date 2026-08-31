@@ -146,6 +146,21 @@ export class GraphHttpClient {
     throw this.classifyError(lastError, endpoint);
   }
 
+  async get<T = any>(endpoint: string, options?: Omit<GraphRequestOptions, 'endpoint' | 'method'>): Promise<T> {
+    const requestOptions: GraphRequestOptions = {
+      tenantConnectionId: options?.tenantConnectionId || '',
+      endpoint,
+      method: 'GET',
+      queryParams: options?.queryParams,
+      select: options?.select,
+      filter: options?.filter,
+      top: options?.top,
+      expand: options?.expand,
+      headers: options?.headers,
+    };
+    return this.request<T>(requestOptions);
+  }
+
   async paginatedRequest<T = any>(options: GraphRequestOptions & { maxPages?: number }): Promise<T[]> {
     const maxPages = options.maxPages || 50;
     let results: T[] = [];

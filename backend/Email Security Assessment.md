@@ -505,25 +505,48 @@ application does not have the Exchange.ManageAsApp permission granted.
 
 ## File Storage Location
 
-After assessment, raw command/API responses are stored in:
+After assessment, raw command/API responses are stored relative to the backend working directory:
 
 ```
-E:\Tool\version-1\backend\assessment-data\{assessment-id}\email-security\
+assessment-data\{assessment-id}\email-security\
 ```
 
-Each module has its own subdirectory with JSON files for each cmdlet/endpoint:
+Each endpoint's raw response is stored as a JSON file within category subdirectories.
 
+---
+
+## Implementation Notes
+
+### Backend Files
+
+| File | Purpose |
+| --- | --- |
+| `backend/src/services/emailSecurityCollector.ts` | Collects Email security data via Exchange Online PowerShell and Microsoft Graph. Handles authentication, command execution, error categorization, and raw response persistence. |
+| `backend/src/services/emailSecurityControlDefinitions.ts` | Defines all Email security controls (Quick, Detailed, Informational) with evaluation functions and validation rules. |
+| `backend/src/services/emailSecurityEvaluator.ts` | Evaluates collected data against control definitions. Includes backward-compatible normalization for legacy `collection.json` formats. |
+| `backend/src/services/assessmentEngine.ts` | Wires Email module into the generic assessment pipeline. Auth failures mark controls as `error` rather than `fail`. |
+
+### Database
+
+- `control_catalog` includes 80 Email controls (21 Quick + 6 QI + 39 Detailed + 18 Informational)
+- `findings.result` ENUM supports `error` and `info` statuses
+
+### Frontend Files
+
+| File | Purpose |
+| --- | --- |
+| `frontend/src/app/results/[id]/email/page.tsx` | Dedicated Email Security module detail view with area-grouped findings, filtering, and evidence modals |
+| `frontend/src/app/results/[id]/page.tsx` | Generic results page with clickable Email module card navigating to the detail view |
+
+### Testing
+
+Run Email evaluator tests:
+```bash
+cd backend && npm test
 ```
-email-security\
-├── anti-phishing\
-├── anti-spam\
-├── anti-malware\
-├── safe-links\
-├── safe-attachments\
-├── permissions-rbac\
-├── smtp-auth\
-├── pop-imap\
-├── connectors\
-├── transport-rules\
-└── common-metrics\
-```
+
+Tests cover:
+- New flat data format and legacy nested `collection.json` format
+- Pass/fail/info/error result paths
+- All 80 control registry entries
+- Edge cases (missing data, null configs, empty arrays)

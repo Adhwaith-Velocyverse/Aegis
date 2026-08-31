@@ -1,0 +1,32 @@
+{
+  "assessmentId": "f817b5ce-b47f-4cce-9142-ff779113d249",
+  "assessmentType": "quick",
+  "collectedAt": "2026-08-31T06:35:13.112Z",
+  "status": "partial",
+  "metrics": {
+    "totalEndpoints": 24,
+    "successfulEndpoints": 21,
+    "failedEndpoints": 3,
+    "controlsPass": 0,
+    "controlsFail": 0,
+    "controlsInfo": 0,
+    "controlsError": 0
+  },
+  "errors": [
+    {
+      "endpoint": "tenant-allow-block-list-items",
+      "error": "Exchange Online command failed: PowerShell execution timed out after 120s",
+      "type": "command_error"
+    },
+    {
+      "endpoint": "graph-security-alerts",
+      "error": "Insufficient permissions to access this resource",
+      "type": "permission_denied"
+    },
+    {
+      "endpoint": "graph-security-incidents",
+      "error": "Insufficient permissions to access this resource",
+      "type": "permission_denied"
+    }
+  ]
+}

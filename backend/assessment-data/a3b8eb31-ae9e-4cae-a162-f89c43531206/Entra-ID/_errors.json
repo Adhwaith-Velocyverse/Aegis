@@ -1,0 +1,12 @@
+[
+  {
+    "endpoint": "/policies/roleManagementPolicies",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  },
+  {
+    "endpoint": "/administrativeUnits",
+    "error": "Request failed with status code 400",
+    "statusCode": 400
+  }
+]
