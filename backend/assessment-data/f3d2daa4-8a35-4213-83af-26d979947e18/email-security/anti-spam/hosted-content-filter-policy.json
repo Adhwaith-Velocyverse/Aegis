@@ -1,7 +1,0 @@
-{
-  "endpoint": "hosted-content-filter-policy",
-  "timestamp": "2026-08-28T10:54:19.597Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-HostedContentFilterPolicy : The term 'Get-HostedContentFilterPolicy' is not recognized as the name of a cmdlet, \r\nfunction, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the \r\npath is correct and try again.\r\nAt line:1 char:1\r\n+ Get-HostedContentFilterPolicy  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-HostedContentFilterPolicy:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
-  "durationMs": 287
-}

@@ -1,7 +1,0 @@
-{
-  "endpoint": "transport-rule",
-  "timestamp": "2026-08-31T05:55:44.524Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-TransportRule : A parameter cannot be found that matches parameter name 'All'.\r\nAt line:3 char:20\r\n+ Get-TransportRule  -All -ResultSize Unlimited | ConvertTo-Json -Depth ...\r\n+                    ~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-TransportRule], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-TransportRule",
-  "durationMs": 13941
-}

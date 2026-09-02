@@ -1,6 +1,0 @@
-{
-  "endpoint": "/identityProtection/riskDetections?$filter=riskState eq 'atRisk'&$count=true",
-  "timestamp": "2026-08-28T07:20:14.332Z",
-  "status": "success",
-  "data": []
-}

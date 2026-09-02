@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Loader2, CheckCircle2, AlertTriangle, Clock, Settings, Users, FileText, Zap } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 
 interface ModuleStatus {
   name: string;
@@ -54,11 +55,16 @@ export default function AssessmentLoadingPage() {
   const pollProgress = async (id: string) => {
     const interval = setInterval(async () => {
       try {
+        const token = useAuthStore.getState().user?.token;
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assessments/${id}/progress`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
+
+        if (response.status === 401) {
+          clearInterval(interval);
+          setError('Session expired. Please log in again to continue tracking the assessment.');
+          return;
+        }
 
         if (response.ok) {
           const data = await response.json();

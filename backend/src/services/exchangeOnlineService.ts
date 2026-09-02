@@ -41,6 +41,11 @@ export interface ExchangePSCommand {
   parameters: Record<string, string | number | boolean | string[]>;
 }
 
+interface CommandResult {
+  data: any;
+  errors: CollectionError[];
+}
+
 export class ExchangeOnlineService {
   private tenantConnectionId: string;
   private tenantId: string;
@@ -50,7 +55,8 @@ export class ExchangeOnlineService {
   private connected = false;
   private connectionPromise: Promise<void> | null = null;
   private psProcess: ChildProcess | null = null;
-  private psReady: Promise<void> | null = null;
+  private commandId = 0;
+  private commandQueue: Promise<CommandResult> = Promise.resolve({ data: null, errors: [] });
 
   constructor(
     tenantConnectionId: string,
@@ -70,27 +76,68 @@ export class ExchangeOnlineService {
     if (this.connected) return;
     if (this.connectionPromise) return this.connectionPromise;
 
-    this.connectionPromise = this.doConnect();
+    this.connectionPromise = this.ensureProcess();
     return this.connectionPromise;
   }
 
-  private async doConnect(): Promise<void> {
-    const cmdlet = 'Connect-ExchangeOnline';
-    if (!EXCHANGE_PS_ALLOWLIST.has(cmdlet)) {
-      throw new Error(`Cmdlet ${cmdlet} is not allowed`);
+  private async ensureProcess(): Promise<void> {
+    if (this.psProcess && !this.psProcess.killed && this.psProcess.exitCode === null) {
+      return;
     }
 
-    let script = `Import-Module ExchangeOnlineManagement -ErrorAction Stop\n`;
+    if (this.psProcess) {
+      try { this.psProcess.kill('SIGTERM'); } catch {}
+      this.psProcess = null;
+    }
+
+    const ps = spawn('powershell.exe', ['-NoProfile', '-Command', '-'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    this.psProcess = ps;
+    this.sharedStdout = '';
+    this.sharedStderr = '';
+    this.psOutputListenerInstalled = false;
+    this.psErrorListenerInstalled = false;
+    this.pendingCalls.clear();
+
+    ps.on('exit', (code) => {
+      this.psProcess = null;
+      this.connected = false;
+      const err = new Error(`PowerShell process exited unexpectedly (code ${code})`);
+      for (const [, entry] of this.pendingCalls) {
+        clearTimeout(entry.timer);
+        entry.reject(err);
+      }
+      this.pendingCalls.clear();
+      if (code !== 0 && code !== null) {
+        console.error(`[ExchangePS] Process exited with code ${code}`);
+      }
+    });
+
+    await this.runBootstrapCommand('Import-Module ExchangeOnlineManagement -ErrorAction Stop');
+
+    const accessToken = await getExchangeOnlineAccessTokenForTenant(this.tenantConnectionId);
+    const userPrincipalName = await this.resolveUserPrincipalName(accessToken);
 
     if (this.authMode === AuthenticationMode.APPLICATION && this.certificateThumbprint) {
-      script += `Connect-ExchangeOnline -AppId "${this.clientId}" -CertificateThumbprint "${this.certificateThumbprint}" -Organization "${this.tenantId}"`;
+      await this.runBootstrapCommand(
+        `Connect-ExchangeOnline -AppId "${this.clientId}" -CertificateThumbprint "${this.certificateThumbprint}" -Organization "${this.tenantId}"`
+      );
     } else {
-      const accessToken = await getExchangeOnlineAccessTokenForTenant(this.tenantConnectionId);
-      const userPrincipalName = await this.resolveUserPrincipalName(accessToken);
-      script += `Connect-ExchangeOnline -UserPrincipalName "${userPrincipalName}" -AccessToken "${accessToken}"`;
+      await this.runBootstrapCommand(
+        `Connect-ExchangeOnline -UserPrincipalName "${userPrincipalName}" -AccessToken "${accessToken}"`
+      );
     }
 
-    const result = await this.executeScript(script);
+    this.connected = true;
+  }
+
+  private async runBootstrapCommand(script: string): Promise<void> {
+    const marker = `<<<EXO_BOOT_${this.commandId++}>>>`;
+    const wrapped = `${script}\nWrite-Output "${marker}"\n`;
+
+    const result = await this.writeToProcess(wrapped, marker);
     if (result.errors.length > 0) {
       const message = result.errors[0].message;
       if (message.toLowerCase().includes('permission') || message.toLowerCase().includes('authorization') || message.toLowerCase().includes('403')) {
@@ -101,13 +148,111 @@ export class ExchangeOnlineService {
       }
       throw new AuthenticationError('COMMAND_ERROR', `Exchange Online connection failed: ${message}`);
     }
-    this.connected = true;
   }
 
-  private async resolveUserPrincipalName(_accessToken: string): Promise<string> {
-    const conn = await query('SELECT tenant_id FROM tenant_connections WHERE id = ?', [this.tenantConnectionId]);
-    const tenantDomain = (conn[0] as any)?.tenant_id || this.tenantId;
-    return `admin@${tenantDomain}`;
+  private pendingCalls: Map<string, { resolve: (r: CommandResult) => void; reject: (e: Error) => void; timer: NodeJS.Timeout; stderr: string }> = new Map();
+  private sharedStdout = '';
+  private sharedStderr = '';
+  private psOutputListenerInstalled = false;
+  private psErrorListenerInstalled = false;
+
+  private async writeToProcess(script: string, marker: string): Promise<CommandResult> {
+    await this.ensureProcess();
+    const ps = this.psProcess!;
+
+    if (!this.psOutputListenerInstalled) {
+      ps.stdout!.setEncoding('utf8');
+      ps.stdout!.on('data', (chunk: string) => this.handleOutput(chunk));
+      this.psOutputListenerInstalled = true;
+    }
+    if (!this.psErrorListenerInstalled) {
+      ps.stderr!.setEncoding('utf8');
+      ps.stderr!.on('data', (chunk: string) => {
+        this.sharedStderr += chunk;
+      });
+      this.psErrorListenerInstalled = true;
+    }
+
+    return new Promise<CommandResult>((resolve, reject) => {
+      const callId = marker;
+      const timer = setTimeout(() => {
+        const entry = this.pendingCalls.get(callId);
+        if (!entry) return;
+        this.pendingCalls.delete(callId);
+        reject(new Error('PowerShell execution timed out after 30s'));
+      }, 30000);
+
+      this.pendingCalls.set(callId, {
+        resolve: (r) => { clearTimeout(timer); resolve(r); },
+        reject: (e) => { clearTimeout(timer); reject(e); },
+        timer,
+        stderr: '',
+      });
+
+      try {
+        ps.stdin!.write(script);
+      } catch (err: any) {
+        this.pendingCalls.delete(callId);
+        clearTimeout(timer);
+        reject(err);
+      }
+    });
+  }
+
+  private handleOutput(chunk: string): void {
+    this.sharedStdout += chunk;
+
+    for (const [marker, entry] of this.pendingCalls) {
+      if (this.sharedStdout.includes(marker)) {
+        const idx = this.sharedStdout.indexOf(marker);
+        const before = this.sharedStdout.substring(0, idx).trim();
+        const after = this.sharedStdout.substring(idx + marker.length);
+
+        let parsed: any = null;
+        if (before) {
+          try { parsed = JSON.parse(before); } catch { parsed = before; }
+        }
+
+        const errors = this.parseErrors(this.sharedStderr);
+        this.sharedStdout = after;
+        this.sharedStderr = '';
+        this.pendingCalls.delete(marker);
+        entry.resolve({ data: parsed, errors });
+      }
+    }
+  }
+
+  private parseErrors(stderr: string): CollectionError[] {
+    const errors: CollectionError[] = [];
+    if (!stderr || !stderr.trim()) return errors;
+
+    const trimmedStderr = stderr.trim().substring(0, 2000);
+    const lower = stderr.toLowerCase();
+    if (lower.includes('permission') || lower.includes('authorization') || lower.includes('403')) {
+      errors.push({
+        type: 'permission_denied',
+        message: `Exchange Online permission denied: ${trimmedStderr}`,
+        operation: 'PowerShellExecute',
+        statusCode: 403,
+        retryable: false,
+      });
+    } else if (lower.includes('connect') || lower.includes('authentication') || lower.includes('unauthorized')) {
+      errors.push({
+        type: 'auth_error',
+        message: `Exchange Online authentication failed: ${trimmedStderr}`,
+        operation: 'PowerShellExecute',
+        statusCode: 401,
+        retryable: false,
+      });
+    } else {
+      errors.push({
+        type: 'api_error',
+        message: trimmedStderr,
+        operation: 'PowerShellExecute',
+        retryable: false,
+      });
+    }
+    return errors;
   }
 
   async executeCommand(cmdlet: string, parameters: Record<string, string | number | boolean | string[]> = {}): Promise<any[]> {
@@ -116,10 +261,24 @@ export class ExchangeOnlineService {
     }
 
     if (cmdlet === 'Disconnect-ExchangeOnline') {
-      const script = `Import-Module ExchangeOnlineManagement -ErrorAction Stop\n${cmdlet} -Confirm:$false | ConvertTo-Json -Depth 3`;
-      const result = await this.executeScript(script);
+      const script = `${cmdlet} -Confirm:$false | ConvertTo-Json -Depth 3`;
+      const marker = `<<<EXO_DISC_${this.commandId++}>>>`;
+      const wrapped = `${script}\nWrite-Output "${marker}"\n`;
+
+      try {
+        await this.writeToProcess(wrapped, marker);
+      } catch {
+        // ignore disconnect errors
+      }
+
       this.connected = false;
       this.connectionPromise = null;
+
+      if (this.psProcess && !this.psProcess.killed) {
+        this.psProcess.kill('SIGTERM');
+        this.psProcess = null;
+      }
+
       return [];
     }
 
@@ -161,17 +320,11 @@ export class ExchangeOnlineService {
     }
     commandScript += ' | ConvertTo-Json -Depth 10';
 
-    let script = `Import-Module ExchangeOnlineManagement -ErrorAction Stop\n`;
-    if (this.authMode === AuthenticationMode.APPLICATION && this.certificateThumbprint) {
-      script += `Connect-ExchangeOnline -AppId "${this.clientId}" -CertificateThumbprint "${this.certificateThumbprint}" -Organization "${this.tenantId}"\n`;
-    } else {
-      const accessToken = await getExchangeOnlineAccessTokenForTenant(this.tenantConnectionId);
-      const userPrincipalName = await this.resolveUserPrincipalName(accessToken);
-      script += `Connect-ExchangeOnline -UserPrincipalName "${userPrincipalName}" -AccessToken "${accessToken}"\n`;
-    }
-    script += commandScript;
+    const marker = `<<<EXO_${this.commandId++}>>>`;
+    const wrapped = `${commandScript}; Write-Output "${marker}"\n`;
 
-    const result = await this.executeScript(script);
+    const result = await this.writeToProcess(wrapped, marker);
+
     if (result.errors.length > 0) {
       const message = result.errors[0].message;
       if (message.toLowerCase().includes('permission') || message.toLowerCase().includes('authorization') || message.toLowerCase().includes('403')) {
@@ -186,102 +339,30 @@ export class ExchangeOnlineService {
     return [];
   }
 
-  async executeScript(script: string): Promise<{ data: any; errors: CollectionError[] }> {
-    const startTime = Date.now();
-    console.log(`[ExchangePS] Executing script (length ${script.length})`);
-
-    try {
-      const ps = spawn('powershell.exe', ['-NoProfile', '-Command', script], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      ps.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      ps.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      const timeout = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          ps.kill();
-          reject(new Error('PowerShell execution timed out after 120s'));
-        }, 120000);
-      });
-
-      await Promise.race([new Promise<void>((resolve) => ps.on('close', resolve)), timeout]);
-
-      const durationMs = Date.now() - startTime;
-      const errors: CollectionError[] = [];
-
-      if (stderr && stderr.trim().length > 0) {
-        const trimmedStderr = stderr.trim().substring(0, 2000);
-        const lower = stderr.toLowerCase();
-        if (lower.includes('permission') || lower.includes('authorization') || lower.includes('403')) {
-          errors.push({
-            type: 'permission_denied',
-            message: `Exchange Online permission denied: ${trimmedStderr}`,
-            operation: 'PowerShellExecute',
-            statusCode: 403,
-            retryable: false,
-          });
-        } else if (lower.includes('connect') || lower.includes('authentication') || lower.includes('unauthorized')) {
-          errors.push({
-            type: 'auth_error',
-            message: `Exchange Online authentication failed: ${trimmedStderr}`,
-            operation: 'PowerShellExecute',
-            statusCode: 401,
-            retryable: false,
-          });
-        } else {
-          errors.push({
-            type: 'api_error',
-            message: trimmedStderr,
-            operation: 'PowerShellExecute',
-            retryable: false,
-          });
-        }
-      }
-
-      let parsed: any = null;
-      if (stdout.trim()) {
-        try {
-          parsed = JSON.parse(stdout.trim());
-        } catch {
-          parsed = stdout.trim();
-        }
-      }
-
-      console.log(`[ExchangePS] Completed in ${durationMs}ms, errors=${errors.length}`);
-      return { data: parsed, errors };
-    } catch (error: any) {
-      const durationMs = Date.now() - startTime;
-      console.error(`[ExchangePS] Failed after ${durationMs}ms:`, maskPII(error.message));
-      return {
-        data: null,
-        errors: [{
-          type: 'api_error',
-          message: error.message || 'PowerShell execution failed',
-          operation: 'PowerShellExecute',
-          retryable: false,
-        }],
-      };
-    }
-  }
-
   async disconnect(): Promise<void> {
     if (!this.connected) return;
     try {
-      await this.executeCommand('Disconnect-ExchangeOnline');
+      const script = `Disconnect-ExchangeOnline -Confirm:$false | ConvertTo-Json -Depth 3`;
+      const marker = `<<<EXO_DISC_${this.commandId++}>>>`;
+      const wrapped = `${script}\nWrite-Output "${marker}"\n`;
+      await this.writeToProcess(wrapped, marker);
     } catch {
       // ignore disconnect errors
     }
+
     this.connected = false;
     this.connectionPromise = null;
+
+    if (this.psProcess && !this.psProcess.killed) {
+      this.psProcess.kill('SIGTERM');
+      this.psProcess = null;
+    }
+  }
+
+  private async resolveUserPrincipalName(_accessToken: string): Promise<string> {
+    const conn = await query('SELECT tenant_id FROM tenant_connections WHERE id = ?', [this.tenantConnectionId]);
+    const tenantDomain = (conn[0] as any)?.tenant_id || this.tenantId;
+    return `admin@${tenantDomain}`;
   }
 }
 

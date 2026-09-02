@@ -2,7 +2,9 @@ import express from 'express';
 import { query } from '../db/connection';
 import { authenticate, AuthRequest, authorize } from '../middleware/auth';
 import { z } from 'zod';
-import { notifyAssessmentComplete, notifyClientDocumentRequest } from '../services/notifications';
+import { getScoreForAssessment } from '../security-scoring/integration/assessment-hook';
+import { sendScoreEmail } from '../security-scoring/integration/email-adapter';
+import { notifyClientDocumentRequest } from '../services/notifications';
 import { auditLog } from '../middleware/audit';
 
 const router = express.Router();
@@ -200,10 +202,13 @@ router.post('/assessment/:id/findings', async (req: AuthRequest, res) => {
         ['completed', assessmentId]
       );
 
-      // Notify client that assessment is complete
+      // Notify client that assessment is complete using the scoring engine
       const users = await query('SELECT id FROM users WHERE organization_id = ? AND platform_role = ?', [orgId, 'client']);
+      const securityScore = await getScoreForAssessment(assessmentId);
       for (const user of users) {
-        await notifyAssessmentComplete((user as any).id, assessmentId, 0); // Score will be recalculated
+        if (securityScore) {
+          await sendScoreEmail((user as any).id, assessmentId, securityScore);
+        }
       }
     }
 

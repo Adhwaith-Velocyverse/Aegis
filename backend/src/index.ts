@@ -145,6 +145,13 @@ app.use(errorHandler);
 // Start server
 async function start() {
   try {
+    if (process.env.NODE_ENV === 'production' && !process.env.ENCRYPTION_KEY) {
+      throw new Error('ENCRYPTION_KEY is required when NODE_ENV=production');
+    }
+    if (process.env.ENCRYPTION_KEY && process.env.ENCRYPTION_KEY.length < 32) {
+      throw new Error('ENCRYPTION_KEY must be at least 32 characters');
+    }
+
     // Test DB connection
     const connection = await pool.getConnection();
     console.log('Database connected successfully');

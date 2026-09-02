@@ -1,0 +1,353 @@
+{
+  "assessment": {
+    "assessmentId": "sample-email-security-001",
+    "assessmentType": "quick",
+    "assessmentName": "Quick Email Security Assessment",
+    "tenantName": "contoso.onmicrosoft.com",
+    "assessmentDate": "2024-01-15T10:00:00.000Z",
+    "status": "completed",
+    "durationMs": 120000
+  },
+  "summary": {
+    "totalControls": 20,
+    "actionableControls": 18,
+    "passed": 10,
+    "failed": 5,
+    "partial": 2,
+    "manualReview": 1,
+    "notApplicable": 2,
+    "totalScore": 54,
+    "maximumScore": 100,
+    "percentage": 54,
+    "riskExposurePercentage": 46,
+    "securityPosturePercentage": 54
+  },
+  "controls": [
+    {
+      "id": "email-1",
+      "name": "Anti-phishing policy exists and enabled",
+      "category": "Anti-Phishing",
+      "severity": "HIGH",
+      "score": 100,
+      "maximumScore": 100,
+      "result": "PASSED",
+      "evidence": "Found 3 enabled anti-phishing policies with recommended settings.",
+      "recommendation": ""
+    },
+    {
+      "id": "email-2",
+      "name": "Safe Links policy is enabled",
+      "category": "Safe Links",
+      "severity": "HIGH",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "No Safe Links policy was found. Users are not protected against malicious URLs.",
+      "recommendation": "Create and enable a Safe Links policy in the Microsoft 365 Defender portal."
+    },
+    {
+      "id": "email-3",
+      "name": "Safe Attachments policy is enabled",
+      "category": "Safe Attachments",
+      "severity": "CRITICAL",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "No Safe Attachments policy detected. Malware protection is not applied to emails.",
+      "recommendation": "Enable Safe Attachments with a strict detection level for all recipients."
+    },
+    {
+      "id": "email-4",
+      "name": "Anti-malware policy exists",
+      "category": "Anti-Malware",
+      "severity": "HIGH",
+      "score": 50,
+      "maximumScore": 100,
+      "result": "PARTIAL",
+      "evidence": "Anti-malware policy exists but filtering is set to 'Off' for some file types.",
+      "recommendation": "Enable malware filtering for all common file types and set action to 'Quarantine'."
+    },
+    {
+      "id": "email-5",
+      "name": "Mailbox auditing is enabled",
+      "category": "Audit",
+      "severity": "MEDIUM",
+      "score": 100,
+      "maximumScore": 100,
+      "result": "PASSED",
+      "evidence": "Mailbox audit logging is enabled for 95% of mailboxes.",
+      "recommendation": ""
+    },
+    {
+      "id": "email-6",
+      "name": "SMTP AUTH is disabled",
+      "category": "Authentication",
+      "severity": "HIGH",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "SMTP AUTH is still enabled for legacy clients. This bypasses modern authentication.",
+      "recommendation": "Block SMTP AUTH and require modern authentication for all clients."
+    },
+    {
+      "id": "email-7",
+      "name": "POP/IMAP is disabled",
+      "category": "Protocols",
+      "severity": "MEDIUM",
+      "score": 100,
+      "maximumScore": 100,
+      "result": "PASSED",
+      "evidence": "POP3 and IMAP4 are disabled for all users.",
+      "recommendation": ""
+    },
+    {
+      "id": "email-8",
+      "name": "Anti-spam policy is enforced",
+      "category": "Anti-Spam",
+      "severity": "MEDIUM",
+      "score": 50,
+      "maximumScore": 100,
+      "result": "PARTIAL",
+      "evidence": "Anti-spam policy exists but bulk email threshold is set too high.",
+      "recommendation": "Lower the bulk email spam threshold and enable safety tips."
+    },
+    {
+      "id": "email-9",
+      "name": "Guest user access reviewed",
+      "category": "Access Control",
+      "severity": "LOW",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "MANUAL_REVIEW",
+      "evidence": "Guest user access settings require manual verification due to external sharing policies.",
+      "recommendation": "Review guest user access settings and external sharing policies quarterly."
+    },
+    {
+      "id": "email-10",
+      "name": "Transport rules for data loss prevention",
+      "category": "DLP",
+      "severity": "HIGH",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "No transport rules configured for sensitive data types.",
+      "recommendation": "Create transport rules to block or quarantine emails containing sensitive data."
+    },
+    {
+      "id": "email-11",
+      "name": "DKIM signing enabled",
+      "category": "Email Authentication",
+      "severity": "MEDIUM",
+      "score": 100,
+      "maximumScore": 100,
+      "result": "PASSED",
+      "evidence": "DKIM is enabled and signing is active for all accepted domains.",
+      "recommendation": ""
+    },
+    {
+      "id": "email-12",
+      "name": "DMARC policy configured",
+      "category": "Email Authentication",
+      "severity": "MEDIUM",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "DMARC policy is set to 'none' instead of 'quarantine' or 'reject'.",
+      "recommendation": "Update DMARC policy to 'quarantine' or 'reject' after monitoring p=None reports."
+    },
+    {
+      "id": "email-13",
+      "name": "SPF record published",
+      "category": "Email Authentication",
+      "severity": "LOW",
+      "score": 100,
+      "maximumScore": 100,
+      "result": "PASSED",
+      "evidence": "SPF record is published and includes all authorized sending services.",
+      "recommendation": ""
+    },
+    {
+      "id": "email-14",
+      "name": "Exchange admin roles limited",
+      "category": "Access Control",
+      "severity": "CRITICAL",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "Too many users have Exchange Administrator role assigned.",
+      "recommendation": "Apply least-privilege principle and assign Exchange Administrator role only to required accounts."
+    },
+    {
+      "id": "email-15",
+      "name": "MFA enforced for all users",
+      "category": "Authentication",
+      "severity": "CRITICAL",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "MFA is not enforced for all users. 12 users have MFA disabled.",
+      "recommendation": "Enforce MFA for all users and disable legacy authentication protocols."
+    },
+    {
+      "id": "email-16",
+      "name": "Conditional Access policies configured",
+      "category": "Access Control",
+      "severity": "HIGH",
+      "score": 50,
+      "maximumScore": 100,
+      "result": "PARTIAL",
+      "evidence": "Conditional Access policies exist but do not cover all risk conditions.",
+      "recommendation": "Expand Conditional Access policies to block legacy auth and require compliant devices."
+    },
+    {
+      "id": "email-17",
+      "name": "Legacy authentication blocked",
+      "category": "Authentication",
+      "severity": "HIGH",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "FAILED",
+      "evidence": "Legacy authentication protocols (POP, IMAP, SMTP AUTH) are still enabled.",
+      "recommendation": "Block all legacy authentication protocols using Conditional Access."
+    },
+    {
+      "id": "email-18",
+      "name": "Password protection policy enabled",
+      "category": "Authentication",
+      "severity": "MEDIUM",
+      "score": 100,
+      "maximumScore": 100,
+      "result": "PASSED",
+      "evidence": "Password protection policy is enabled with banned password lists.",
+      "recommendation": ""
+    },
+    {
+      "id": "email-19",
+      "name": "Guest user MFA enforced",
+      "category": "Access Control",
+      "severity": "MEDIUM",
+      "score": 0,
+      "maximumScore": 100,
+      "result": "NOT_APPLICABLE",
+      "evidence": "No guest users are present in the tenant.",
+      "recommendation": ""
+    },
+    {
+      "id": "email-20",
+      "name": "Message encryption enabled",
+      "category": "Encryption",
+      "severity": "LOW",
+      "score": 100,
+      "maximumScore": 100,
+      "result": "PASSED",
+      "evidence": "Office 365 Message Encryption is enabled for external recipients.",
+      "recommendation": ""
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "REC-01",
+      "controlId": "email-3",
+      "title": "Enable Safe Attachments protection",
+      "description": "Safe Attachments provides an additional layer of protection against unknown malware.",
+      "severity": "CRITICAL",
+      "priority": 1,
+      "remediation": "Create a Safe Attachments policy in the Microsoft 365 Defender portal with a strict detection level.",
+      "reason": "Failed controls: email-3",
+      "affectedControls": ["email-3"]
+    },
+    {
+      "id": "REC-02",
+      "controlId": "email-15",
+      "title": "Enforce multi-factor authentication",
+      "description": "MFA significantly reduces the risk of credential-based attacks.",
+      "severity": "CRITICAL",
+      "priority": 2,
+      "remediation": "Enable MFA for all users and block legacy authentication protocols.",
+      "reason": "Failed controls: email-15",
+      "affectedControls": ["email-15"]
+    },
+    {
+      "id": "REC-03",
+      "controlId": "email-2",
+      "title": "Enable Safe Links protection",
+      "description": "Safe Links checks URLs in real-time to protect against phishing and malware.",
+      "severity": "HIGH",
+      "priority": 3,
+      "remediation": "Create a Safe Links policy in the Microsoft 365 Defender portal.",
+      "reason": "Failed controls: email-2",
+      "affectedControls": ["email-2"]
+    },
+    {
+      "id": "REC-04",
+      "controlId": "email-14",
+      "title": "Limit Exchange Administrator role assignments",
+      "description": "Excessive Exchange admin privileges increase the blast radius of a compromise.",
+      "severity": "HIGH",
+      "priority": 4,
+      "remediation": "Review and remove unnecessary Exchange Administrator role assignments.",
+      "reason": "Failed controls: email-14",
+      "affectedControls": ["email-14"]
+    },
+    {
+      "id": "REC-05",
+      "controlId": "email-10",
+      "title": "Configure data loss prevention transport rules",
+      "description": "Transport rules help prevent sensitive data from leaving the organization.",
+      "severity": "HIGH",
+      "priority": 5,
+      "remediation": "Create transport rules to block or quarantine emails containing sensitive data types.",
+      "reason": "Failed controls: email-10",
+      "affectedControls": ["email-10"]
+    }
+  ],
+  "informationalControls": [
+    {
+      "id": "info-1",
+      "title": "Total Mailboxes",
+      "evidence": "2,500 mailboxes detected across all licensed users.",
+      "details": { "count": 2500, "licensed": 2500, "shared": 45 }
+    },
+    {
+      "id": "info-2",
+      "title": "Security Alerts",
+      "evidence": "3 high-severity and 12 medium-severity security alerts were detected in the last 30 days.",
+      "details": { "high": 3, "medium": 12, "low": 28 }
+    }
+  ],
+  "failedEndpoints": [
+    {
+      "endpoint": "safe-links-policy",
+      "errorType": "permission_denied",
+      "errorMessage": "Insufficient privileges to complete operation.",
+      "statusCode": 403,
+      "description": "The service principal lacks SecurityActions.ReadWrite.All permission.",
+      "impact": "Safe Links policies could not be enumerated."
+    },
+    {
+      "endpoint": "anti-phish-policy",
+      "errorType": "command_error",
+      "errorMessage": "Get-AntiPhishPolicy : The term 'Get-AntiPhishPolicy' is not recognized.",
+      "statusCode": null,
+      "description": "Exchange Online PowerShell module version is outdated.",
+      "impact": "Anti-phishing policies may be incomplete."
+    }
+  ],
+  "metadata": {
+    "severityBreakdown": { "critical": 3, "high": 6, "medium": 7, "low": 4 },
+    "categoryScores": [
+      { "name": "Anti-Phishing", "score": 100, "totalControls": 1, "passedControls": 1, "failedControls": 0, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Safe Links", "score": 0, "totalControls": 1, "passedControls": 0, "failedControls": 1, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Safe Attachments", "score": 0, "totalControls": 1, "passedControls": 0, "failedControls": 1, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Anti-Malware", "score": 50, "totalControls": 1, "passedControls": 0, "failedControls": 0, "partialControls": 1, "notAssessedControls": 0 },
+      { "name": "Audit", "score": 100, "totalControls": 1, "passedControls": 1, "failedControls": 0, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Authentication", "score": 25, "totalControls": 3, "passedControls": 1, "failedControls": 2, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Protocols", "score": 100, "totalControls": 1, "passedControls": 1, "failedControls": 0, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Anti-Spam", "score": 50, "totalControls": 1, "passedControls": 0, "failedControls": 0, "partialControls": 1, "notAssessedControls": 0 },
+      { "name": "Access Control", "score": 0, "totalControls": 3, "passedControls": 0, "failedControls": 2, "partialControls": 0, "notAssessedControls": 1 },
+      { "name": "DLP", "score": 0, "totalControls": 1, "passedControls": 0, "failedControls": 1, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Email Authentication", "score": 67, "totalControls": 3, "passedControls": 2, "failedControls": 1, "partialControls": 0, "notAssessedControls": 0 },
+      { "name": "Encryption", "score": 100, "totalControls": 1, "passedControls": 1, "failedControls": 0, "partialControls": 0, "notAssessedControls": 0 }
+    ]
+  }
+}

@@ -1,7 +1,0 @@
-{
-  "endpoint": "safe-links-policy",
-  "timestamp": "2026-08-31T06:08:56.308Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-SafeLinksPolicy : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:22\r\n+ Get-SafeLinksPolicy  -ResultSize Unlimited | ConvertTo-Json -Depth 10\r\n+                      ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-SafeLinksPolicy], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-SafeLinksPolicy",
-  "durationMs": 8434
-}

@@ -1,7 +1,0 @@
-{
-  "endpoint": "tenant-allow-block-list-items",
-  "timestamp": "2026-08-31T05:56:04.949Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-TenantAllowBlockListItems : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:32\r\n+ Get-TenantAllowBlockListItems  -ResultSize Unlimited | ConvertTo-Json ...\r\n+                                ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-TenantAllowBlockListItems], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-TenantAllowBlockListItems",
-  "durationMs": 9553
-}

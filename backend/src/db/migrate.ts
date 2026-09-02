@@ -139,7 +139,7 @@ async function migrate() {
       id VARCHAR(36) PRIMARY KEY,
       assessment_id VARCHAR(36) NOT NULL,
       module_name VARCHAR(100) NOT NULL,
-      collection_status ENUM('pending', 'collecting', 'completed', 'failed', 'permission_denied') DEFAULT 'pending',
+      collection_status ENUM('pending', 'collecting', 'completed', 'partial', 'failed', 'permission_denied') DEFAULT 'pending',
       module_score INT,
       passed_count INT DEFAULT 0,
       failed_count INT DEFAULT 0,
@@ -388,6 +388,28 @@ async function migrate() {
       UNIQUE KEY unique_connection_module (tenant_connection_id, module_name)
     )`,
 
+    // Security Scores (standalone scoring module)
+    `CREATE TABLE IF NOT EXISTS security_scores (
+      id VARCHAR(36) PRIMARY KEY,
+      assessment_id VARCHAR(36) NOT NULL,
+      tenant_id VARCHAR(255) NOT NULL,
+      overall_score INT NULL,
+      security_rating VARCHAR(50) NOT NULL,
+      assessment_status VARCHAR(50),
+      summary JSON,
+      severity_breakdown JSON,
+      category_scores JSON,
+      failed_controls JSON,
+      recommendations JSON,
+      assessment_type VARCHAR(50),
+      calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_tenant_assessment (tenant_id, assessment_id),
+      INDEX idx_calculated_at (calculated_at),
+      UNIQUE KEY unique_assessment_score (assessment_id)
+    )`,
+
     // Add missing columns to existing users table
     `ALTER TABLE users ADD COLUMN deleted_at TIMESTAMP NULL`,
     `ALTER TABLE users ADD COLUMN deletion_reason TEXT`,
@@ -453,6 +475,50 @@ async function migrate() {
       // ENUM already updated or table doesn't exist yet
     } else {
       console.error('Failed to update findings ENUM:', error.message);
+    }
+  }
+
+  try {
+    await query("ALTER TABLE assessment_modules MODIFY COLUMN collection_status ENUM('pending', 'collecting', 'completed', 'partial', 'failed', 'permission_denied') DEFAULT 'pending'");
+    console.log('Updated assessment_modules collection_status ENUM to include partial');
+  } catch (error: any) {
+    if (error.message?.includes('Duplicate column name') || error.message?.includes('Unknown column')) {
+      // ENUM already updated or table doesn't exist yet
+    } else {
+      console.error('Failed to update assessment_modules collection_status ENUM:', error.message);
+    }
+  }
+
+  try {
+    await query('ALTER TABLE security_scores ADD UNIQUE KEY unique_assessment_score (assessment_id)');
+    console.log('Added unique key on assessment_id to security_scores');
+  } catch (error: any) {
+    if (error.message?.includes('Duplicate key name') || error.message?.includes('Unknown column')) {
+      // unique key already exists or table doesn't exist yet
+    } else {
+      console.error('Failed to add unique key to security_scores:', error.message);
+    }
+  }
+
+  try {
+    await query('ALTER TABLE security_scores ADD COLUMN assessment_status VARCHAR(50) AFTER assessment_type');
+    console.log('Added assessment_status column to security_scores');
+  } catch (error: any) {
+    if (error.message?.includes('Duplicate column name') || error.message?.includes('Unknown column')) {
+      // column already exists or table doesn't exist yet
+    } else {
+      console.error('Failed to add assessment_status to security_scores:', error.message);
+    }
+  }
+
+  try {
+    await query('ALTER TABLE security_scores MODIFY COLUMN overall_score INT NULL');
+    console.log('Made overall_score nullable on security_scores');
+  } catch (error: any) {
+    if (error.message?.includes('Unknown column')) {
+      // table doesn't exist yet
+    } else {
+      console.error('Failed to make overall_score nullable on security_scores:', error.message);
     }
   }
 

@@ -1,8 +1,0 @@
-{
-  "endpoint": "/policies/identitySecurityDefaultsEnforcementPolicy",
-  "timestamp": "2026-08-27T11:55:57.449Z",
-  "status": "error",
-  "data": {
-    "error": "Request failed with status code 500"
-  }
-}

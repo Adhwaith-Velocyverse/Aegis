@@ -1,7 +1,0 @@
-{
-  "endpoint": "tenant-allow-block-list-items",
-  "timestamp": "2026-08-28T10:54:27.090Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-TenantAllowBlockListItems : The term 'Get-TenantAllowBlockListItems' is not recognized as the name of a cmdlet, \r\nfunction, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the \r\npath is correct and try again.\r\nAt line:1 char:1\r\n+ Get-TenantAllowBlockListItems  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-TenantAllowBlockListItems:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
-  "durationMs": 304
-}

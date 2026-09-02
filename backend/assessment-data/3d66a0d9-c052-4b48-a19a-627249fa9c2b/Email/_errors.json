@@ -1,8 +1,0 @@
-[
-  {
-    "command": "Connect-ExchangeOnline",
-    "type": "auth_error",
-    "message": "Exchange Online connection failed: Import-Module : The specified module 'ExchangeOnlineManagement' was not loaded because no valid module file was found \r\nin any module directory.\r\nAt line:1 char:1\r\n+ Import-Module ExchangeOnlineManagement -ErrorAction Stop\r\n+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ResourceUnavailable: (ExchangeOnlineManagement:String) [Import-Module], FileNotFoundExce \r\n   ption\r\n    + FullyQualifiedErrorId : Modules_ModuleNotFound,Microsoft.PowerShell.Commands.Im",
-    "retryable": false
-  }
-]
