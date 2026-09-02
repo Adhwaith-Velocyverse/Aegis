@@ -1,5 +1,6 @@
 import { GraphHttpClient } from '../../services/graphHttpClient';
 import { getAccessTokenForTenant } from '../../services/msalAuth';
+import { AuthenticationError } from '../../types/m365';
 import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
