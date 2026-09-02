@@ -1,7 +1,0 @@
-{
-  "endpoint": "tenant-allow-block-list-items",
-  "timestamp": "2026-08-31T08:01:06.007Z",
-  "status": "error",
-  "error": "Exchange Online command failed: PowerShell execution timed out after 120s",
-  "durationMs": 120574
-}

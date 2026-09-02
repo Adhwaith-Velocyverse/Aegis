@@ -1,7 +1,0 @@
-{
-  "endpoint": "anti-phish-rule",
-  "timestamp": "2026-08-28T10:54:19.310Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-AntiPhishRule : The term 'Get-AntiPhishRule' is not recognized as the name of a cmdlet, function, script file, or \r\noperable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try \r\nagain.\r\nAt line:1 char:1\r\n+ Get-AntiPhishRule  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-AntiPhishRule:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
-  "durationMs": 317
-}

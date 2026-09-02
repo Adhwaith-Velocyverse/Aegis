@@ -1,7 +1,0 @@
-{
-  "endpoint": "hosted-content-filter-rule",
-  "timestamp": "2026-08-31T05:48:15.227Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-HostedContentFilterRule : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:30\r\n+ Get-HostedContentFilterRule  -ResultSize Unlimited | ConvertTo-Json - ...\r\n+                              ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-HostedContentFilterRule], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-HostedContentFilterRule",
-  "durationMs": 12423
-}

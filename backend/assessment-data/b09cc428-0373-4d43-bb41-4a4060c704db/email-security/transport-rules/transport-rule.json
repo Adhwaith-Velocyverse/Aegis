@@ -1,7 +1,0 @@
-{
-  "endpoint": "transport-rule",
-  "timestamp": "2026-08-28T10:55:22.702Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-TransportRule : The term 'Get-TransportRule' is not recognized as the name of a cmdlet, function, script file, or \r\noperable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try \r\nagain.\r\nAt line:1 char:1\r\n+ Get-TransportRule  -All -ResultSize Unlimited | ConvertTo-Json -Depth ...\r\n+ ~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-TransportRule:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
-  "durationMs": 313
-}

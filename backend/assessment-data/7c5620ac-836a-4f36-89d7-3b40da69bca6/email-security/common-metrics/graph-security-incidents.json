@@ -1,7 +1,0 @@
-{
-  "endpoint": "graph-security-incidents",
-  "timestamp": "2026-08-28T11:29:18.794Z",
-  "status": "error",
-  "error": "Insufficient permissions to access this resource",
-  "durationMs": 695
-}

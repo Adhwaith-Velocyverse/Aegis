@@ -1,7 +1,0 @@
-[
-  {
-    "endpoint": "/policies/roleManagementPolicies",
-    "error": "Request failed with status code 400",
-    "statusCode": 400
-  }
-]

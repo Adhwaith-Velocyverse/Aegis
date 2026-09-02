@@ -1,7 +1,0 @@
-{
-  "endpoint": "graph-users",
-  "timestamp": "2026-08-28T10:55:25.419Z",
-  "status": "error",
-  "error": "graph.get is not a function",
-  "durationMs": 682
-}

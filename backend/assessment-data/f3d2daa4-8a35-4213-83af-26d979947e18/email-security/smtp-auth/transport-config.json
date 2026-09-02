@@ -1,7 +1,0 @@
-{
-  "endpoint": "transport-config",
-  "timestamp": "2026-08-28T10:54:23.187Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-TransportConfig : The term 'Get-TransportConfig' is not recognized as the name of a cmdlet, function, script file, \r\nor operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and \r\ntry again.\r\nAt line:1 char:1\r\n+ Get-TransportConfig  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-TransportConfig:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
-  "durationMs": 299
-}

@@ -1,7 +1,0 @@
-{
-  "endpoint": "transport-config",
-  "timestamp": "2026-08-31T05:55:00.664Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-TransportConfig : A parameter cannot be found that matches parameter name 'ResultSize'.\r\nAt line:3 char:22\r\n+ Get-TransportConfig  -ResultSize Unlimited | ConvertTo-Json -Depth 10\r\n+                      ~~~~~~~~~~~\r\n    + CategoryInfo          : InvalidArgument: (:) [Get-TransportConfig], ParameterBindingException\r\n    + FullyQualifiedErrorId : NamedParameterNotFound,Get-TransportConfig",
-  "durationMs": 9990
-}

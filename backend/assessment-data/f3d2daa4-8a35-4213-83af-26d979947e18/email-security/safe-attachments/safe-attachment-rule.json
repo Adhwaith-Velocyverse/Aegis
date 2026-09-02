@@ -1,7 +1,0 @@
-{
-  "endpoint": "safe-attachment-rule",
-  "timestamp": "2026-08-28T10:54:22.590Z",
-  "status": "error",
-  "error": "Exchange Online command failed: Get-SafeAttachmentRule : The term 'Get-SafeAttachmentRule' is not recognized as the name of a cmdlet, function, script \r\nfile, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct \r\nand try again.\r\nAt line:1 char:1\r\n+ Get-SafeAttachmentRule  | ConvertTo-Json -Depth 10\r\n+ ~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : ObjectNotFound: (Get-SafeAttachmentRule:String) [], CommandNotFoundException\r\n    + FullyQualifiedErrorId : CommandNotFoundException",
-  "durationMs": 312
-}

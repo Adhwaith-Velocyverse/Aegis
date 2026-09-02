@@ -1,8 +1,0 @@
-{
-  "endpoint": "/policies/roleManagementPolicies",
-  "timestamp": "2026-08-26T09:06:36.018Z",
-  "status": "error",
-  "data": {
-    "error": "Request failed with status code 400"
-  }
-}

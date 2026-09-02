@@ -1,8 +1,0 @@
-{
-  "endpoint": "/servicePrincipals?$filter=ssoUrl ne null",
-  "timestamp": "2026-08-28T07:37:16.174Z",
-  "status": "error",
-  "data": {
-    "error": "Request failed with status code 400"
-  }
-}
