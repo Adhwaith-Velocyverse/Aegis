@@ -4,7 +4,6 @@ import { GraphHttpClient, getGraphClient } from './graphHttpClient';
 import { GraphPowerShellService, getGraphPowerShellService } from './graphPowerShellService';
 import { ExchangeOnlineService, getExchangeOnlineService } from './exchangeOnlineService';
 import { TenantValidator, PermissionValidator, ConnectionHealthService } from './connectionValidator';
-import { DataNormalizationService } from './dataNormalizationService';
 import { M365ConnectionState, AuthenticationMode, AuthenticationError, HealthCheckResult, ConnectionMetadata, CollectionError } from '../types/m365';
 import { auditLog } from '../middleware/audit';
 
@@ -18,7 +17,6 @@ export class Microsoft365ConnectionManager {
   private graphPsService: GraphPowerShellService | null = null;
   private exchangeService: ExchangeOnlineService | null = null;
   private state: M365ConnectionState = M365ConnectionState.PENDING;
-  private normalizer = new DataNormalizationService();
   private tenantValidator = new TenantValidator();
   private permissionValidator = new PermissionValidator();
   private healthService = new ConnectionHealthService();

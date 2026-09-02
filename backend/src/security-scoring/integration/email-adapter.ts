@@ -73,7 +73,6 @@ export async function sendScoreEmail(userId: string, assessmentId: string, score
       console.info(`[Email] provider accepted message assessmentId=${assessmentId} userId=${userId} messageId=${result?.messageId}`);
     } catch (error: any) {
       console.error(`[Email] failed assessmentId=${assessmentId} userId=${userId} error=${error?.message || error}`);
-      throw error;
     }
   } else {
     console.warn(`[Email] recipient not found userId=${userId} assessmentId=${assessmentId}`);

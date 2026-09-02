@@ -19,3 +19,5 @@ export type {
   EmailNotifier,
 } from './types';
 export { SCORING_CONFIG } from './config/scoring-config';
+export { EMAIL_CONTROL_SCORING_RULES, EMAIL_CATEGORY_WEIGHTS, getEmailControlRule, getEmailCategoryWeight } from './config/email-scoring-config';
+export type { EmailControlScoringRule, EmailControlCategory } from './config/email-scoring-config';

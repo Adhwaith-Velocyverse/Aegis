@@ -2,7 +2,7 @@ import { query } from '../../db/connection';
 import { calculateSecurityScore } from '../scoring/scoring-engine';
 import { generateRecommendations } from '../recommendations/recommendation-engine';
 import { getAssessmentData } from '../assessment/assessment-data-adapter';
-import { saveSecurityScore } from '../persistence/score-repository';
+import { saveSecurityScore, getScoreByAssessmentId } from '../persistence/score-repository';
 import type { SecurityScoreResult } from '../types';
 
 export async function processAssessmentScore(assessmentId: string): Promise<SecurityScoreResult | null> {
@@ -42,44 +42,9 @@ export async function processAssessmentScore(assessmentId: string): Promise<Secu
 
 export async function getScoreForAssessment(assessmentId: string): Promise<SecurityScoreResult | null> {
   try {
-    const rows = await query(
-      'SELECT * FROM security_scores WHERE assessment_id = ? LIMIT 1',
-      [assessmentId]
-    );
-
-    if (rows.length === 0) return null;
-    const row = rows[0] as any;
-    const overallScore = row.overall_score;
-    if (overallScore === null || overallScore === undefined) return null;
-
-    return {
-      assessmentId: row.assessment_id,
-      tenantId: row.tenant_id,
-      calculatedAt: row.calculated_at,
-      overallScore,
-      securityRating: row.security_rating,
-      summary: parseJsonField(row.summary),
-      severityBreakdown: parseJsonField(row.severity_breakdown),
-      categoryScores: parseJsonField(row.category_scores),
-      failedControls: parseJsonField(row.failed_controls),
-      recommendations: parseJsonField(row.recommendations),
-      assessmentType: row.assessment_type || 'quick',
-      assessmentStatus: row.assessment_status || 'completed',
-    };
+    return await getScoreByAssessmentId(assessmentId);
   } catch (error) {
     console.error(`[Scoring] load failed assessmentId=${assessmentId} error=${(error as Error).message}`);
     return null;
   }
-}
-
-function parseJsonField(value: any): any {
-  if (value === null || value === undefined) return value;
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return value;
-    }
-  }
-  return value;
 }

@@ -80,7 +80,14 @@ function normalizeEmailSecurityData(data: Record<string, any>): Record<string, a
 
 export function evaluateEmailSecurityControl(controlName: string, data: Record<string, any>, rawResponses: any[]): EmailControlEvaluationResult | null {
   const normalizedData = normalizeEmailSecurityData(data);
-  const control = EMAIL_SECURITY_CONTROLS.find((c) => c.title === controlName);
+  let control = EMAIL_SECURITY_CONTROLS.find((c) => c.title === controlName);
+  if (!control) {
+    control = EMAIL_SECURITY_CONTROLS.find((c) => c.id === controlName);
+  }
+  if (!control) {
+    const normalized = controlName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    control = EMAIL_SECURITY_CONTROLS.find((c) => c.title.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized);
+  }
   if (!control) {
     return null;
   }

@@ -9,7 +9,10 @@ export interface AuthRequest extends Request {
 }
 
 // Session management constants
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes inactivity timeout
+// Sliding inactivity window: prefer the larger of SESSION_TIMEOUT_MS and the JWT's own `exp` so that
+// healthy long-running polling clients (e.g. assessment progress) don't get 401'd between JWT
+// refreshes. Hard expiry is still enforced by `jwt.verify` via `exp`.
+const SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours inactivity window
 const REMEMBER_ME_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days for "Remember me"
 
 // JWT token blacklist (in-memory, use Redis in production)

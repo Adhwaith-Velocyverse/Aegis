@@ -1,4 +1,5 @@
 import { SCORING_CONFIG } from '../config/scoring-config';
+import { getEmailControlRule, getEmailCategoryWeight, EMAIL_CATEGORY_WEIGHTS } from '../config/email-scoring-config';
 import type {
   NormalizedAssessment,
   NormalizedControlResult,
@@ -10,6 +11,7 @@ import type {
 export function calculateSecurityScore(assessment: NormalizedAssessment): SecurityScoreResult {
   const controls = assessment.controls || [];
   const now = new Date().toISOString();
+  const isEmailAssessment = assessment.assessmentType === 'email' || controls.some((c) => (c.moduleName || '').toLowerCase() === 'email');
 
   let totalWeightedScore = 0;
   let totalWeight = 0;
@@ -26,10 +28,19 @@ export function calculateSecurityScore(assessment: NormalizedAssessment): Securi
 
   for (const control of controls) {
     const status = mapStatus(control.status);
-    const severity = mapSeverity(control.severity);
-    const weight = control.weight || 1;
-    const statusWeight = SCORING_CONFIG.statusWeights[status] ?? 0;
-    const severityWeight = SCORING_CONFIG.severityWeights[severity] ?? 1;
+    let severity = mapSeverity(control.severity);
+    let weight = control.weight || 1;
+    let statusWeight = SCORING_CONFIG.statusWeights[status] ?? 0;
+    let severityWeight = SCORING_CONFIG.severityWeights[severity] ?? 1;
+
+    if (isEmailAssessment) {
+      const emailRule = getEmailControlRule(control.controlId);
+      if (emailRule) {
+        weight = emailRule.weight;
+        severity = emailRule.severity;
+        severityWeight = SCORING_CONFIG.severityWeights[severity] ?? 1;
+      }
+    }
 
     if (['PASS', 'PARTIAL', 'FAIL'].includes(status)) {
       totalWeightedScore += statusWeight * severityWeight * weight;
@@ -80,9 +91,18 @@ export function calculateSecurityScore(assessment: NormalizedAssessment): Securi
 
     for (const c of group.controls) {
       const s = mapStatus(c.status);
-      const sv = mapSeverity(c.severity);
-      const w = c.weight || 1;
-      const sw = SCORING_CONFIG.severityWeights[sv] ?? 1;
+      let sv = mapSeverity(c.severity);
+      let w = c.weight || 1;
+      let sw = SCORING_CONFIG.severityWeights[sv] ?? 1;
+
+      if (isEmailAssessment) {
+        const emailRule = getEmailControlRule(c.controlId);
+        if (emailRule) {
+          w = emailRule.weight;
+          sv = emailRule.severity;
+          sw = SCORING_CONFIG.severityWeights[sv] ?? 1;
+        }
+      }
 
       if (['PASS', 'PARTIAL', 'FAIL'].includes(s)) {
         catWeighted += (SCORING_CONFIG.statusWeights[s] ?? 0) * sw * w;

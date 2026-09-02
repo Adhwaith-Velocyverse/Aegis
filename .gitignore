@@ -1,9 +1,9 @@
 # Environment variables
+.env
 .env.*
 !.env.example
 
 # Dependencies
-node_modules/
 node_modules/
 
 # Next.js
@@ -12,6 +12,7 @@ node_modules/
 # Build output
 dist/
 build/
+*.tsbuildinfo
 
 # Logs
 *.log
@@ -27,3 +28,21 @@ Thumbs.db
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# Aegis runtime data (tenant PII, generated reports, audit debris)
+backend/assessment-data/
+backend/storage/
+backend/coverage/
+shared/dist/
+dump.rdb
+version-1.zip
+frontend-response.html
+test-email.js
+*.docx
+prd-text.txt
+prd-extracted.md
+TODO.md
+PENETRATION_TEST_CHECKLIST.md
+VELOCYVERSE_BUILD_GAP_ANALYSIS.md
+Velocyverse_MasterBuildDoc_v2.1.md
+Velocyverse_MasterBuildDoc_v2.docx

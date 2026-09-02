@@ -36,10 +36,14 @@ const worker = new Worker('assessment-queue', async (job) => {
       }
 
       for (const user of users) {
-        if (securityScore) {
-          const maskedEmail = (user as any).email ? (user as any).email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : 'MISSING';
-          console.info(`[Email] sending score email userId=${user.id} email=${maskedEmail} assessmentId=${assessmentId}`);
-          await sendScoreEmail((user as any).id, assessmentId, securityScore);
+        try {
+          if (securityScore) {
+            const maskedEmail = (user as any).email ? (user as any).email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : 'MISSING';
+            console.info(`[Email] sending score email userId=${user.id} email=${maskedEmail} assessmentId=${assessmentId}`);
+            await sendScoreEmail((user as any).id, assessmentId, securityScore);
+          }
+        } catch (error) {
+          console.error(`[Email] skipped user userId=${user.id} assessmentId=${assessmentId} error=${(error as Error).message}`);
         }
       }
     } else {
@@ -56,14 +60,6 @@ const worker = new Worker('assessment-queue', async (job) => {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379'),
   },
-});
-
-worker.on('completed', (job) => {
-  console.log(`Job ${job.id} completed`);
-});
-
-worker.on('failed', (job, err) => {
-  console.error(`Job ${job?.id} failed:`, err);
 });
 
 export default worker;

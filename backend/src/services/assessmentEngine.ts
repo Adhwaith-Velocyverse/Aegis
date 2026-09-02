@@ -1,6 +1,5 @@
 import { query } from '../db/connection';
 import { GraphConnector, getAccessToken, ModuleCollectionResult, GraphErrorType, MODULE_CONFIGS, getModuleConfig } from './graphConnector';
-import { calculateAssessmentScore } from './scoringEngine';
 import { processAssessmentScore, getScoreForAssessment } from '../security-scoring/integration/assessment-hook';
 import { attachScoreToReport } from '../security-scoring/integration/report-adapter';
 import { sendScoreEmail } from '../security-scoring/integration/email-adapter';
@@ -190,36 +189,37 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
           );
         }
       } catch (error) {
+        console.error(`Module assessment error assessmentId=${assessmentId} module=${moduleName} error=${(error as Error).message}`);
         await query('UPDATE assessment_modules SET collection_status = ? WHERE id = ?', ['failed', (module as any).id]);
       }
     }
 
-    // Calculate final score
-    const scoringResult = await calculateAssessmentScore(assessmentId);
+    const securityScore = await processAssessmentScore(assessmentId);
+    if (!securityScore) {
+      throw new Error(`processAssessmentScore returned no result for ${assessmentId}`);
+    }
+
+    const band = deriveBand(securityScore.overallScore ?? 0);
 
     // Update assessment with final results
     await query(
       'UPDATE assessments SET status = ?, overall_score = ?, score_band = ?, completed_at = NOW() WHERE id = ?',
-      ['completed', scoringResult.overallScore, scoringResult.scoreBand, assessmentId]
+      ['completed', securityScore.overallScore ?? 0, band.scoreBand, assessmentId]
     );
 
     // Store band color and description in assessment metadata
     await query(
       `INSERT INTO assessment_metadata (id, assessment_id, \`key\`, value) VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE value = ?`,
-      [uuidv4(), assessmentId, 'band_color', scoringResult.bandColor, scoringResult.bandColor]
+      [uuidv4(), assessmentId, 'band_color', band.bandColor, band.bandColor]
     );
     await query(
       `INSERT INTO assessment_metadata (id, assessment_id, \`key\`, value) VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE value = ?`,
-      [uuidv4(), assessmentId, 'band_description', scoringResult.bandDescription, scoringResult.bandDescription]
+      [uuidv4(), assessmentId, 'band_description', band.bandDescription, band.bandDescription]
     );
 
-    // Run standalone security scoring and recommendation engine
-    const securityScore = await processAssessmentScore(assessmentId);
-    if (securityScore) {
-      await attachScoreToReport(assessmentId, securityScore);
-    }
+    await attachScoreToReport(assessmentId, securityScore);
 
     // Check if manual review is needed for Detailed assessments
     let needsManualReview = false;
@@ -240,8 +240,8 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
     }
 
     return {
-      ...scoringResult,
-      securityScore,
+      ...securityScore,
+      needsManualReview,
     };
   } catch (error) {
     console.error('Run assessment error:', error);
@@ -630,5 +630,15 @@ async function runEmailSecurityAssessment(
       );
     }
     return true;
+  } finally {
+    await collector.disconnect();
   }
+}
+
+function deriveBand(overallScore: number): { scoreBand: string; bandColor: string; bandDescription: string } {
+  if (overallScore >= 90) return { scoreBand: 'Excellent', bandColor: 'green', bandDescription: 'Strong security posture across all assessed controls.' };
+  if (overallScore >= 75) return { scoreBand: 'Good', bandColor: 'blue', bandDescription: 'Solid security posture with minor improvements recommended.' };
+  if (overallScore >= 50) return { scoreBand: 'Fair', bandColor: 'yellow', bandDescription: 'Some security controls in place but improvements needed.' };
+  if (overallScore >= 25) return { scoreBand: 'Poor', bandColor: 'orange', bandDescription: 'Significant security gaps requiring attention.' };
+  return { scoreBand: 'Critical', bandColor: 'red', bandDescription: 'Critical security gaps requiring immediate remediation.' };
 }

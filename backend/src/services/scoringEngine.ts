@@ -151,15 +151,3 @@ export async function calculateAssessmentScore(assessmentId: string): Promise<Sc
     topFindings: allFindings.slice(0, 10),
   };
 }
-
-export function generateRecommendations(findings: any[]): string[] {
-  const recommendations: string[] = [];
-
-  for (const finding of findings) {
-    if (finding.result === 'fail') {
-      recommendations.push(finding.recommendation || `Address ${finding.control_name}`);
-    }
-  }
-
-  return recommendations.slice(0, 5);
-}
