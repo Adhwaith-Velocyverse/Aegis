@@ -293,6 +293,22 @@ export class EmailSecurityCollector {
     return 'command_error';
   }
 
+  private getAllCategoryFolders(): string[] {
+    return [
+      'anti-malware',
+      'anti-phishing',
+      'anti-spam',
+      'common-metrics',
+      'connectors',
+      'permissions-rbac',
+      'pop-imap',
+      'safe-attachments',
+      'safe-links',
+      'smtp-auth',
+      'transport-rules',
+    ];
+  }
+
   saveDataToFiles(assessmentId: string, result: EmailSecurityCollectionResult): void {
     const baseDir = path.join(__dirname, '..', '..', 'assessment-data', assessmentId, 'email-security');
 
@@ -318,6 +334,47 @@ export class EmailSecurityCollector {
         durationMs: response.durationMs,
       };
       fs.writeFileSync(filepath, JSON.stringify(content, null, 2));
+    }
+
+    if (result.status === 'failed' || result.rawResponses.length === 0) {
+      for (const category of this.getAllCategoryFolders()) {
+        const categoryDir = path.join(baseDir, category);
+        if (!fs.existsSync(categoryDir)) {
+          fs.mkdirSync(categoryDir, { recursive: true });
+        }
+        const errorFile = path.join(categoryDir, '_errors.json');
+        fs.writeFileSync(
+          errorFile,
+          JSON.stringify(
+            {
+              status: 'failed',
+              reason: result.status === 'failed'
+                ? 'Assessment failed before any endpoint data could be collected.'
+                : 'No raw responses were collected for this assessment.',
+              errors: result.errors,
+              collectedAt: result.collectedAt,
+            },
+            null,
+            2,
+          ),
+        );
+      }
+
+      const topErrorFile = path.join(baseDir, '_errors.json');
+      fs.writeFileSync(
+        topErrorFile,
+        JSON.stringify(
+          {
+            status: 'failed',
+            reason: result.errors[0]?.error
+              ?? 'Assessment failed before any endpoint data could be collected.',
+            errors: result.errors,
+            collectedAt: result.collectedAt,
+          },
+          null,
+          2,
+        ),
+      );
     }
 
     const summaryPath = path.join(baseDir, '_summary.json');
