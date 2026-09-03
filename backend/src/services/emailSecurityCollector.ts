@@ -124,6 +124,7 @@ export class EmailSecurityCollector {
     const data: Record<string, any> = {};
     const errors: Array<{ endpoint: string; error: string; type: string }> = [];
     const rawResponses: EmailSecurityRawResponse[] = [];
+    let connectionError: string | null = null;
 
     try {
       const exchange = await this.getExchangeService();
@@ -194,7 +195,17 @@ export class EmailSecurityCollector {
         }
       }
     } catch (error: any) {
+      connectionError = error.message;
       errors.push({ endpoint: 'connection', error: error.message, type: 'auth_error' });
+      for (const endpoint of endpoints) {
+        rawResponses.push({
+          endpoint: endpoint.id,
+          timestamp: new Date().toISOString(),
+          status: 'error',
+          error: `Connection failed: ${error.message}`,
+          durationMs: 0,
+        });
+      }
     }
 
     const status = errors.length === 0 ? 'completed' : errors.some(e => e.type === 'auth_error') ? 'failed' : 'partial';
@@ -215,7 +226,7 @@ export class EmailSecurityCollector {
       metrics: {
         totalEndpoints: endpoints.length,
         successfulEndpoints: rawResponses.filter(r => r.status === 'success').length,
-        failedEndpoints: errors.length,
+        failedEndpoints: rawResponses.filter(r => r.status === 'error').length,
         controlsPass: 0,
         controlsFail: 0,
         controlsInfo: 0,
@@ -293,22 +304,6 @@ export class EmailSecurityCollector {
     return 'command_error';
   }
 
-  private getAllCategoryFolders(): string[] {
-    return [
-      'anti-malware',
-      'anti-phishing',
-      'anti-spam',
-      'common-metrics',
-      'connectors',
-      'permissions-rbac',
-      'pop-imap',
-      'safe-attachments',
-      'safe-links',
-      'smtp-auth',
-      'transport-rules',
-    ];
-  }
-
   saveDataToFiles(assessmentId: string, result: EmailSecurityCollectionResult): void {
     const baseDir = path.join(__dirname, '..', '..', 'assessment-data', assessmentId, 'email-security');
 
@@ -336,30 +331,7 @@ export class EmailSecurityCollector {
       fs.writeFileSync(filepath, JSON.stringify(content, null, 2));
     }
 
-    if (result.status === 'failed' || result.rawResponses.length === 0) {
-      for (const category of this.getAllCategoryFolders()) {
-        const categoryDir = path.join(baseDir, category);
-        if (!fs.existsSync(categoryDir)) {
-          fs.mkdirSync(categoryDir, { recursive: true });
-        }
-        const errorFile = path.join(categoryDir, '_errors.json');
-        fs.writeFileSync(
-          errorFile,
-          JSON.stringify(
-            {
-              status: 'failed',
-              reason: result.status === 'failed'
-                ? 'Assessment failed before any endpoint data could be collected.'
-                : 'No raw responses were collected for this assessment.',
-              errors: result.errors,
-              collectedAt: result.collectedAt,
-            },
-            null,
-            2,
-          ),
-        );
-      }
-
+    if (result.status === 'failed') {
       const topErrorFile = path.join(baseDir, '_errors.json');
       fs.writeFileSync(
         topErrorFile,
