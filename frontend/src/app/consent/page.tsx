@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Shield, CheckCircle2, AlertTriangle, Lock, Users, Mail, HardDrive, Cloud, MessageSquare, Server, Settings, ArrowRight, Info } from 'lucide-react';
@@ -15,7 +15,6 @@ interface ConsentModule {
   connectorType: 'graph' | 'powershell';
 }
 
-// Module configs aligned with backend MODULE_SCOPE_MAP (Section 16.2 verified)
 const CONSENT_MODULES: ConsentModule[] = [
   {
     name: 'Entra ID',
@@ -27,71 +26,17 @@ const CONSENT_MODULES: ConsentModule[] = [
     connectorType: 'graph',
   },
   {
-    name: 'M365 Admin Center',
-    description: 'Organization-wide settings',
-    plainEnglishDescription: 'Read your organization settings, license information, and sharing policies to understand your M365 configuration.',
-    scopes: ['Organization.Read.All', 'Directory.Read.All'],
-    icon: Settings,
-    required: true,
-    connectorType: 'graph',
-  },
-  {
-    name: 'Purview',
-    description: 'Compliance and data protection',
-    plainEnglishDescription: 'Read your DLP policies, sensitivity labels, retention policies, and audit log configuration to assess data protection.',
-    scopes: [], // PowerShell-only — no Graph scopes
-    icon: Shield,
-    required: false,
-    connectorType: 'powershell',
-  },
-  {
     name: 'Email',
     description: 'Exchange Online security',
     plainEnglishDescription: 'Read your anti-phishing policies, anti-malware settings, external forwarding rules, and mailbox audit configuration.',
-    scopes: [], // PowerShell-only — no Graph scopes
+    scopes: [],
     icon: Mail,
     required: false,
     connectorType: 'powershell',
   },
-  {
-    name: 'Intune',
-    description: 'Device management and compliance',
-    plainEnglishDescription: 'Read your device configurations, compliance policies, and managed device status to assess endpoint security.',
-    scopes: ['DeviceManagementConfiguration.Read.All', 'DeviceManagementManagedDevices.Read.All'],
-    icon: HardDrive,
-    required: false,
-    connectorType: 'graph',
-  },
-  {
-    name: 'Cloud Apps',
-    description: 'Cloud app security',
-    plainEnglishDescription: 'Read your discovered apps, sanctioned apps, and cloud app security alerts to assess cloud app usage.',
-    scopes: ['CloudApp-Discovery.Read.All'], // Beta-only, limited coverage
-    icon: Cloud,
-    required: false,
-    connectorType: 'graph',
-  },
-  {
-    name: 'Teams',
-    description: 'Teams collaboration security',
-    plainEnglishDescription: 'Read your Teams settings, external access policies, and meeting security configurations.',
-    scopes: ['Policy.Read.All'], // Directory-level guest access only
-    icon: MessageSquare,
-    required: false,
-    connectorType: 'graph',
-  },
-  {
-    name: 'SharePoint',
-    description: 'SharePoint sharing and permissions',
-    plainEnglishDescription: 'Read your SharePoint sharing settings, external access policies, and site-level permissions.',
-    scopes: ['SharePointTenantSettings.Read.All', 'Sites.Read.All'],
-    icon: Server,
-    required: false,
-    connectorType: 'graph',
-  },
 ];
 
-export default function ConsentPage() {
+function ConsentContent() {
   const [selectedModules, setSelectedModules] = useState<string[]>(CONSENT_MODULES.map(m => m.name));
   const [loading, setLoading] = useState(false);
   const [connectionId, setConnectionId] = useState<string | null>(null);
@@ -129,7 +74,7 @@ export default function ConsentPage() {
     setSelectedModules(prev => {
       const module = CONSENT_MODULES.find(m => m.name === moduleName);
       if (module?.required) {
-        return prev; // Cannot deselect required modules
+        return prev;
       }
       if (prev.includes(moduleName)) {
         return prev.filter(m => m !== moduleName);
@@ -143,7 +88,6 @@ export default function ConsentPage() {
     
     setLoading(true);
     try {
-      // Use incremental consent endpoint
       const requestBody = {
         connectionId,
         modules: selectedModules,
@@ -152,14 +96,12 @@ export default function ConsentPage() {
       const response = await api.post('/tenants/consent/incremental', requestBody);
 
       if (response.data.data?.requiresConsent && response.data.data.authUrl) {
-        // Store selected modules for the OAuth flow
         sessionStorage.setItem('consentedModules', JSON.stringify(selectedModules));
         if (assessmentType) {
           sessionStorage.setItem('pendingAssessmentType', assessmentType);
         }
         window.location.href = response.data.data.authUrl;
       } else if (response.data.data?.requiresConsent === false) {
-        // All modules already consented, proceed to assessment or dashboard
         if (assessmentType) {
           router.push(`/assessment/${assessmentType}?connectionId=${connectionId}`);
         } else {
@@ -187,7 +129,6 @@ export default function ConsentPage() {
   return (
     <div className="min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Shield className="w-12 h-12 text-primary-600 mr-3" />
@@ -198,7 +139,6 @@ export default function ConsentPage() {
           </p>
         </div>
 
-        {/* Incremental consent info banner */}
         {isIncremental && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
             <div className="flex items-start">
@@ -213,7 +153,6 @@ export default function ConsentPage() {
           </div>
         )}
 
-        {/* Read-only confirmation banner */}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8">
           <div className="flex items-start">
             <Lock className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
@@ -226,7 +165,6 @@ export default function ConsentPage() {
           </div>
         </div>
 
-        {/* Module selection */}
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Select Assessment Modules</h2>
@@ -299,7 +237,6 @@ export default function ConsentPage() {
                       </div>
                       <p className="text-xs text-gray-600 mt-2">{module.plainEnglishDescription}</p>
                       
-                      {/* Scopes display */}
                       <div className="mt-2 flex flex-wrap gap-1">
                         {module.scopes.map((scope) => {
                           const isNew = !isAlreadyConsented;
@@ -324,7 +261,6 @@ export default function ConsentPage() {
                         )}
                       </div>
 
-                      {/* Status message */}
                       {isAlreadyConsented && !hasNewScopes && (
                         <p className="text-xs text-green-600 mt-2 flex items-center">
                           <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -345,7 +281,6 @@ export default function ConsentPage() {
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.push('/connect-tenant')}
@@ -384,7 +319,6 @@ export default function ConsentPage() {
           </div>
         </div>
 
-        {/* Help text */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
             Need help? <button className="text-primary-600 hover:text-primary-700 font-medium">Contact Support</button>
@@ -392,5 +326,17 @@ export default function ConsentPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConsentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <ConsentContent />
+    </Suspense>
   );
 }

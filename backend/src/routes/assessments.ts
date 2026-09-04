@@ -4,7 +4,7 @@ import { query } from '../db/connection';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { AssessmentType, AssessmentStatus } from '@aegis/shared';
 import { enqueueAssessment } from '../services/queue';
-import { getActiveModuleNames } from '../services/graphConnector';
+import { getActiveModuleNames, getActiveModuleNamesForAssessmentType } from '../services/graphConnector';
 import { z } from 'zod';
 import { auditLog } from '../middleware/audit';
 import { canRunAssessment } from '../middleware/featureGate';
@@ -182,7 +182,20 @@ router.get('/:id/progress', authenticate, async (req: AuthRequest, res) => {
 router.get('/:id/modules', authenticate, async (req: AuthRequest, res) => {
   try {
     const modules = await query('SELECT * FROM assessment_modules WHERE assessment_id = ?', [req.params.id]);
-    res.json({ success: true, data: modules });
+    const mapped = (modules as any[]).map((m) => ({
+      id: m.id,
+      assessmentId: m.assessment_id,
+      moduleName: m.module_name,
+      collectionStatus: m.collection_status,
+      moduleScore: m.module_score ?? undefined,
+      passedCount: m.passed_count ?? undefined,
+      failedCount: m.failed_count ?? undefined,
+      notApplicableCount: m.not_applicable_count ?? undefined,
+      rawDataPath: m.raw_data_path ?? undefined,
+      createdAt: m.created_at ? new Date(m.created_at) : undefined,
+      updatedAt: m.updated_at ? new Date(m.updated_at) : undefined,
+    }));
+    res.json({ success: true, data: mapped });
   } catch (error) {
     console.error('Get modules error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch modules' });
@@ -601,7 +614,7 @@ router.post('/:type/start', authenticate, (req, res, next) => {
     );
 
     // Create assessment modules from MODULES registry (FR-5.1)
-    const modules = getActiveModuleNames();
+    const modules = getActiveModuleNamesForAssessmentType(type);
     for (const moduleName of modules) {
       await query(
         'INSERT INTO assessment_modules (id, assessment_id, module_name, collection_status) VALUES (?, ?, ?, ?)',

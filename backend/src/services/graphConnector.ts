@@ -64,29 +64,29 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
     connectorType: 'graph',
     isActive: true,
   },
-  'M365 Admin Center': {
-    name: 'M365 Admin Center',
-    displayName: 'M365 Admin Center',
-    description: 'Organization settings, licenses, subscriptions',
-    scopes: ['Organization.Read.All', 'Directory.Read.All'],
-    endpoints: [
-      '/organization',
-      '/subscribedSkus',
-    ],
-    criticalControls: ['/organization'],
-    connectorType: 'graph',
-    isActive: true,
-  },
-  'Purview': {
-    name: 'Purview',
-    displayName: 'Purview',
-    description: 'Compliance, DLP, data classification, retention — requires PowerShell connector (no Graph API for DLP policy definitions)',
-    scopes: ['InformationProtectionPolicy.Read.All', 'SecurityEvents.Read.All'],
-    endpoints: [],
-    criticalControls: [],
-    connectorType: 'powershell',
-    isActive: true,
-  },
+   'M365 Admin Center': {
+     name: 'M365 Admin Center',
+     displayName: 'M365 Admin Center',
+     description: 'Organization settings, licenses, subscriptions',
+     scopes: ['Organization.Read.All', 'Directory.Read.All'],
+     endpoints: [
+       '/organization',
+       '/subscribedSkus',
+     ],
+     criticalControls: ['/organization'],
+     connectorType: 'graph',
+     isActive: false,
+   },
+   'Purview': {
+     name: 'Purview',
+     displayName: 'Purview',
+     description: 'Compliance, DLP, data classification, retention — requires PowerShell connector (no Graph API for DLP policy definitions)',
+     scopes: ['InformationProtectionPolicy.Read.All', 'SecurityEvents.Read.All'],
+     endpoints: [],
+     criticalControls: [],
+     connectorType: 'powershell',
+     isActive: false,
+   },
   'Email': {
     name: 'Email',
     displayName: 'Email / Defender for Office 365',
@@ -109,64 +109,82 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
     connectorType: 'powershell',
     isActive: true,
   },
-  'Intune': {
-    name: 'Intune',
-    displayName: 'Intune',
-    description: 'Device management, compliance, encryption, app protection',
-    scopes: ['DeviceManagementConfiguration.Read.All', 'DeviceManagementManagedDevices.Read.All'],
-    endpoints: [
-      '/deviceManagement/deviceConfigurations',
-      '/deviceManagement/managedDevices',
-      '/deviceManagement/deviceCompliancePolicies',
-    ],
-    criticalControls: ['/deviceManagement/managedDevices', '/deviceManagement/deviceCompliancePolicies'],
-    connectorType: 'graph',
-    isActive: true,
-  },
-  'Cloud Apps': {
-    name: 'Cloud Apps',
-    displayName: 'Cloud Apps (Defender for Cloud Apps)',
-    description: 'Cloud app discovery, shadow IT, sanctioned apps — beta Graph API only (CloudApp-Discovery.Read.All); full CASB policy config requires manual review',
-    scopes: ['CloudApp-Discovery.Read.All', 'SecurityEvents.Read.All'],
-    endpoints: [
-      '/security/alerts?$filter=source/name eq \'Cloud App Security\'',
-    ],
-    criticalControls: ['/security/alerts'],
-    connectorType: 'graph',
-    isActive: true,
-  },
-  'Teams': {
-    name: 'Teams',
-    displayName: 'Teams',
-    description: 'Teams settings, external access, meetings, messaging policies',
-    scopes: ['TeamSettings.Read.All', 'Policy.Read.All'],
-    endpoints: [
-      '/teamwork/teamSettings',
-      '/policies/authenticationMethodsPolicy',
-    ],
-    criticalControls: ['/teamwork/teamSettings'],
-    connectorType: 'powershell', // Full Teams policies require PowerShell
-    isActive: true,
-  },
-  'SharePoint': {
-    name: 'SharePoint',
-    displayName: 'SharePoint',
-    description: 'Sharing, external access, permissions, site settings',
-    scopes: ['Sites.Read.All', 'SharePointTenantSettings.Read.All'],
-    endpoints: [
-      '/sites/root',
-      '/admin/sharepoint/settings',
-    ],
-    criticalControls: ['/admin/sharepoint/settings'],
-    connectorType: 'graph',
-    isActive: true,
-  },
+   'Intune': {
+     name: 'Intune',
+     displayName: 'Intune',
+     description: 'Device management, compliance, encryption, app protection',
+     scopes: ['DeviceManagementConfiguration.Read.All', 'DeviceManagementManagedDevices.Read.All'],
+     endpoints: [
+       '/deviceManagement/deviceConfigurations',
+       '/deviceManagement/managedDevices',
+       '/deviceManagement/deviceCompliancePolicies',
+     ],
+     criticalControls: ['/deviceManagement/managedDevices', '/deviceManagement/deviceCompliancePolicies'],
+     connectorType: 'graph',
+     isActive: false,
+   },
+   'Cloud Apps': {
+     name: 'Cloud Apps',
+     displayName: 'Cloud Apps (Defender for Cloud Apps)',
+     description: 'Cloud app discovery, shadow IT, sanctioned apps — beta Graph API only (CloudApp-Discovery.Read.All); full CASB policy config requires manual review',
+     scopes: ['CloudApp-Discovery.Read.All', 'SecurityEvents.Read.All'],
+     endpoints: [
+       '/security/alerts?$filter=source/name eq \'Cloud App Security\'',
+     ],
+     criticalControls: ['/security/alerts'],
+     connectorType: 'graph',
+     isActive: false,
+   },
+   'Teams': {
+     name: 'Teams',
+     displayName: 'Teams',
+     description: 'Teams settings, external access, meetings, messaging policies',
+     scopes: ['TeamSettings.Read.All', 'Policy.Read.All'],
+     endpoints: [
+       '/teamwork/teamSettings',
+       '/policies/authenticationMethodsPolicy',
+     ],
+     criticalControls: ['/teamwork/teamSettings'],
+     connectorType: 'powershell', // Full Teams policies require PowerShell
+     isActive: false,
+   },
+   'SharePoint': {
+     name: 'SharePoint',
+     displayName: 'SharePoint',
+     description: 'Sharing, external access, permissions, site settings',
+     scopes: ['Sites.Read.All', 'SharePointTenantSettings.Read.All'],
+     endpoints: [
+       '/sites/root',
+       '/admin/sharepoint/settings',
+     ],
+     criticalControls: ['/admin/sharepoint/settings'],
+     connectorType: 'graph',
+     isActive: false,
+   },
 };
 
 // Get all active module names
 export function getActiveModuleNames(): string[] {
   return Object.entries(MODULE_CONFIGS)
     .filter(([_, config]) => config.isActive)
+    .map(([name, _]) => name);
+}
+
+// Get active module names filtered by assessment type
+export function getActiveModuleNamesForAssessmentType(type: 'trial' | 'quick' | 'detailed'): string[] {
+  if (type === 'trial') {
+    return [];
+  }
+
+  return Object.entries(MODULE_CONFIGS)
+    .filter(([_, config]) => {
+      if (!config.isActive) return false;
+      if (type === 'detailed') return true;
+      // For quick assessment, only include modules with working Graph-based collectors
+      // or dedicated non-PowerShell collectors (e.g. EmailSecurityCollector)
+      if (config.connectorType === 'powershell') return false;
+      return config.criticalControls.length > 0;
+    })
     .map(([name, _]) => name);
 }
 

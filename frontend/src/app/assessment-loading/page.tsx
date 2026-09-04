@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Loader2, CheckCircle2, AlertTriangle, Clock, Settings, Users, FileText, Zap } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
@@ -11,16 +11,10 @@ interface ModuleStatus {
   icon: any;
 }
 
-const MODULES: ModuleStatus[] = [
-  { name: 'Entra ID', status: 'pending', icon: Users },
-  { name: 'M365 Admin Center', status: 'pending', icon: Settings },
-  { name: 'Purview', status: 'pending', icon: Shield },
-  { name: 'Email', status: 'pending', icon: FileText },
-  { name: 'Intune', status: 'pending', icon: Loader2 },
-  { name: 'Cloud Apps', status: 'pending', icon: Shield },
-  { name: 'Teams', status: 'pending', icon: Users },
-  { name: 'SharePoint', status: 'pending', icon: Settings },
-];
+const MODULE_ICONS: Record<string, any> = {
+  'Entra ID': Users,
+  'Email': FileText,
+};
 
 const STAGES = [
   { name: 'Initializing', description: 'Preparing assessment environment' },
@@ -29,13 +23,13 @@ const STAGES = [
   { name: 'Preparing Results', description: 'Generating your security report' },
 ];
 
-export default function AssessmentLoadingPage() {
+function AssessmentLoadingContent() {
   const [currentStage, setCurrentStage] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [modules, setModules] = useState<ModuleStatus[]>(MODULES);
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [assessmentType, setAssessmentType] = useState<'quick' | 'detailed'>('quick');
+  const [modules, setModules] = useState<ModuleStatus[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -70,37 +64,29 @@ export default function AssessmentLoadingPage() {
           const data = await response.json();
           const moduleStatuses = data.data.modules || [];
           
-          setModules(prev => prev.map((module, index) => {
-            const status = moduleStatuses[index];
-            if (!status) return module;
-            
-            let newStatus: ModuleStatus['status'] = 'pending';
-            if (status.collection_status === 'completed') newStatus = 'completed';
-            else if (status.collection_status === 'failed' || status.collection_status === 'permission_denied') newStatus = 'failed';
-            else if (status.collection_status === 'collecting') newStatus = 'in_progress';
-            
-            return { ...module, status: newStatus };
-          }));
+          setModules(moduleStatuses.map((m: any) => ({
+            name: m.module_name,
+            status: m.collection_status === 'completed' ? 'completed' :
+                    m.collection_status === 'failed' || m.collection_status === 'permission_denied' ? 'failed' :
+                    m.collection_status === 'collecting' ? 'in_progress' : 'pending',
+            icon: MODULE_ICONS[m.module_name] || Shield,
+          })));
 
-          // Calculate progress
           const completed = moduleStatuses.filter((m: any) => m.collection_status === 'completed').length;
           const failed = moduleStatuses.filter((m: any) => m.collection_status === 'failed' || m.collection_status === 'permission_denied').length;
           const total = moduleStatuses.length;
           const progressPercent = total > 0 ? Math.round(((completed + failed) / total) * 100) : 0;
           setProgress(progressPercent);
 
-          // Update stage based on progress
           if (progressPercent < 20) setCurrentStage(0);
           else if (progressPercent < 60) setCurrentStage(1);
           else if (progressPercent < 90) setCurrentStage(2);
           else setCurrentStage(3);
 
-          // Check if assessment is complete
           if (data.data.status === 'completed') {
             clearInterval(interval);
             router.push(`/results/${id}`);
           } else if (data.data.status === 'pending' && assessmentType === 'detailed') {
-            // Detailed assessment pending manual review - redirect to results
             clearInterval(interval);
             router.push(`/results/${id}`);
           } else if (data.data.status === 'failed') {
@@ -145,7 +131,6 @@ export default function AssessmentLoadingPage() {
   return (
     <div className="min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Shield className="w-12 h-12 text-primary-600 mr-3" />
@@ -167,7 +152,6 @@ export default function AssessmentLoadingPage() {
           )}
         </div>
 
-        {/* Progress Bar */}
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Overall Progress</h2>
@@ -199,7 +183,6 @@ export default function AssessmentLoadingPage() {
           </div>
         </div>
 
-        {/* Current Stage Description */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
           <div className="flex items-start">
             <Loader2 className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0 animate-spin" />
@@ -214,7 +197,6 @@ export default function AssessmentLoadingPage() {
           </div>
         </div>
 
-        {/* Module Status */}
         <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Module Collection Status</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -255,7 +237,6 @@ export default function AssessmentLoadingPage() {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
             <div className="flex items-start">
@@ -274,7 +255,6 @@ export default function AssessmentLoadingPage() {
           </div>
         )}
 
-        {/* Help Text */}
         <div className="text-center">
           <p className="text-sm text-gray-500">
             Please do not close this window. The assessment will continue in the background.
@@ -282,5 +262,17 @@ export default function AssessmentLoadingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AssessmentLoadingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <AssessmentLoadingContent />
+    </Suspense>
   );
 }

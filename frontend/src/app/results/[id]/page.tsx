@@ -4,8 +4,59 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Assessment, AssessmentModule, Finding } from '@aegis/shared';
-import { Shield, Download, Share2, AlertTriangle, CheckCircle2, XCircle, HelpCircle, Mail, Copy, Check, Filter, ChevronDown, ChevronUp, User, Clock, Search, ExternalLink, ChevronLeft, ChevronRight, Info, ShieldCheck, FileText, Building2, Users, Target, ArrowUpDown, Eye, BarChart3, TrendingUp, Zap, RefreshCw, Calendar, Award, Star, Crown, Flag, BookOpen, Lightbulb, Settings, Wrench, Hammer, Package, GitBranch, Network, Globe, Server, Database, Lock, Shield as ShieldIcon, Scan, Layers, Activity, Monitor, Cpu, HardDrive, Cloud, Code, Terminal, Layout, PanelTop, Briefcase, ClipboardList, ListChecks, ShieldCheck as ShieldCheckIcon, ShieldOff, ShieldX, ShieldAlert, ShieldQuestion, ShieldPlus, ShieldMinus, Shield as ShieldIcon2, Shield as ShieldIcon3, Shield as ShieldIcon4, Shield as ShieldIcon5, Shield as ShieldIcon6, Shield as ShieldIcon7 } from 'lucide-react';
+import { Shield, Download, Share2, AlertTriangle, CheckCircle2, XCircle, HelpCircle, Mail, Copy, Check, Filter, ChevronDown, ChevronUp, User, Clock, Search, ExternalLink, ChevronLeft, ChevronRight, ArrowLeft, Info, ShieldCheck, FileText, Building2, Users, Target, ArrowUpDown, Eye, BarChart3, TrendingUp, Zap, RefreshCw, Calendar, Award, Star, Crown, Flag, BookOpen, Lightbulb, Settings, Wrench, Hammer, Package, GitBranch, Network, Globe, Server, Database, Lock, Shield as ShieldIcon, Scan, Layers, Activity, Monitor, Cpu, HardDrive, Cloud, Code, Terminal, Layout, PanelTop, Briefcase, ClipboardList, ListChecks, ShieldCheck as ShieldCheckIcon, ShieldOff, ShieldX, ShieldAlert, ShieldQuestion, ShieldPlus, ShieldMinus, Shield as ShieldIcon2, Shield as ShieldIcon3, Shield as ShieldIcon4, Shield as ShieldIcon5, Shield as ShieldIcon6, Shield as ShieldIcon7, Plus, MessageSquare } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+const scoreColorMap: Record<string, string> = {
+  red: '#EF4444',
+  yellow: '#F59E0B',
+  blue: '#3B82F6',
+  green: '#10B981',
+  gray: '#9CA3AF',
+  orange: '#F97316',
+};
+
+function ScoreRing({ score, bandColor, scoreBand, bandDescription }: { score: number; bandColor: string; scoreBand?: string; bandDescription?: string }) {
+  const color = scoreColorMap[bandColor as keyof typeof scoreColorMap] || scoreColorMap['No Data'];
+  const radius = 54;
+  const stroke = 8;
+  const normalizedRadius = radius - stroke / 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const percent = Math.min(Math.max(score, 0), 100) / 100;
+  const dashArray = `${percent * circumference} ${circumference}`;
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        <svg width={radius * 2} height={radius * 2}>
+          <circle stroke="#E5E7EB" fill="none" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius} />
+          <circle
+            stroke={color}
+            fill="none"
+            strokeWidth={stroke}
+            strokeDasharray={dashArray}
+            strokeLinecap="round"
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+            transform={`rotate(-90 ${radius} ${radius})`}
+            className="transition-all duration-500"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-3xl font-bold text-gray-900">{score}</span>
+          <span className="text-xs text-gray-500">/100</span>
+        </div>
+      </div>
+      {scoreBand && (
+        <div className="mt-4 text-center">
+          <span className="text-sm font-medium text-gray-900">{scoreBand}</span>
+          {bandDescription && <p className="text-xs text-gray-500 mt-1 max-w-[200px]">{bandDescription}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type SortField = 'severity' | 'control_name' | 'module_name' | 'result';
 type SortOrder = 'ASC' | 'DESC';
@@ -169,6 +220,14 @@ export default function ResultsPage() {
     return result;
   }, [findings, findingFilter, findingSearch, sortField, sortOrder]);
 
+  const getPostureDescription = (band: string, score: number): string => {
+    if (score >= 90) return 'Strong security posture across all assessed controls.';
+    if (score >= 75) return 'Solid security posture with minor improvements recommended.';
+    if (score >= 50) return 'Some security controls in place but improvements needed.';
+    if (score >= 25) return 'Significant security gaps requiring attention.';
+    return 'Critical security gaps requiring immediate remediation.';
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
@@ -207,6 +266,44 @@ export default function ResultsPage() {
     }
   };
 
+  const formatDuration = (ms: number): string => {
+    if (!ms) return '-';
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+    return parts.join(' ');
+  };
+
+  const formatCompletedOn = (dateString: string | Date | undefined): string => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const MODULE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; barColor: string }> = {
+    'Entra ID': { icon: Users, color: 'text-blue-600', bgColor: 'bg-blue-100', barColor: 'bg-blue-500' },
+    'Email': { icon: Mail, color: 'text-purple-600', bgColor: 'bg-purple-100', barColor: 'bg-purple-500' },
+    'Purview': { icon: ShieldCheck, color: 'text-green-600', bgColor: 'bg-green-100', barColor: 'bg-green-500' },
+    'Intune': { icon: Monitor, color: 'text-blue-600', bgColor: 'bg-blue-100', barColor: 'bg-blue-500' },
+    'M365 Admin Center': { icon: Settings, color: 'text-gray-600', bgColor: 'bg-gray-100', barColor: 'bg-gray-500' },
+    'Cloud Apps': { icon: Cloud, color: 'text-indigo-600', bgColor: 'bg-indigo-100', barColor: 'bg-indigo-500' },
+    'Teams': { icon: MessageSquare, color: 'text-teal-600', bgColor: 'bg-teal-100', barColor: 'bg-teal-500' },
+    'SharePoint': { icon: Server, color: 'text-orange-600', bgColor: 'bg-orange-100', barColor: 'bg-orange-500' },
+  };
+
+  const getModuleIcon = (moduleName: string) => MODULE_CONFIG[moduleName] || { icon: Shield, color: 'text-gray-600', bgColor: 'bg-gray-100', barColor: 'bg-gray-500' };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -237,38 +334,41 @@ export default function ResultsPage() {
     { name: 'N/A', value: modules.reduce((sum, m) => sum + (m.notApplicableCount || 0), 0), color: '#94a3b8' },
   ];
 
-  const daysUntilExpiry = getDaysUntilExpiry();
-
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Shield className="w-8 h-8 text-primary-600 mr-3" />
-              <h1 className="text-xl font-bold text-gray-900">Aegis</h1>
+              <Shield className="w-7 h-7 text-primary-600 mr-3" />
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Aegis Security Assessment</h1>
+                <p className="text-xs text-gray-500">
+                  {assessment.tenantName || 'Unknown Tenant'} • {assessment.type} Assessment
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={handleDownloadPDF}
-                className="flex items-center text-gray-600 hover:text-gray-900"
+                className="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                <Download className="w-5 h-5 mr-1" />
+                <Download className="w-4 h-4 mr-1.5" />
                 PDF
               </button>
               <button
                 onClick={handleDownloadExcel}
-                className="flex items-center text-gray-600 hover:text-gray-900"
+                className="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                <Download className="w-5 h-5 mr-1" />
+                <Download className="w-4 h-4 mr-1.5" />
                 Excel
               </button>
               <button
                 onClick={() => setShowShareModal(true)}
-                className="flex items-center text-gray-600 hover:text-gray-900"
+                className="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                <Share2 className="w-5 h-5 mr-1" />
+                <Share2 className="w-4 h-4 mr-1.5" />
                 Share
               </button>
             </div>
@@ -399,196 +499,396 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Status Banner */}
-        {detailedRequest ? (
-          <div className={`rounded-lg p-4 mb-8 ${
-            detailedRequest.status === 'completed' ? 'bg-green-50 border border-green-200' :
-            detailedRequest.status === 'in_review' ? 'bg-purple-50 border border-purple-200' :
-            detailedRequest.status === 'awaiting_client' ? 'bg-yellow-50 border border-yellow-200' :
-            'bg-blue-50 border border-blue-200'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`font-medium ${
-                  detailedRequest.status === 'completed' ? 'text-green-800' :
-                  detailedRequest.status === 'in_review' ? 'text-purple-800' :
-                  detailedRequest.status === 'awaiting_client' ? 'text-yellow-800' :
-                  'text-blue-800'
-                }`}>
-                  Detailed Assessment {detailedRequest.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                </p>
-                <p className={`text-sm mt-1 ${
-                  detailedRequest.status === 'completed' ? 'text-green-600' :
-                  detailedRequest.status === 'in_review' ? 'text-purple-600' :
-                  detailedRequest.status === 'awaiting_client' ? 'text-yellow-600' :
-                  'text-blue-600'
-                }`}>
-                  {detailedRequest.status === 'unassigned' && 'Waiting for an assessor to be assigned...'}
-                  {detailedRequest.status === 'assigned' && `Assigned to ${detailedRequest.assessor_name || 'an assessor'}`}
-                  {detailedRequest.status === 'in_review' && 'Assessor is currently reviewing your assessment'}
-                  {detailedRequest.status === 'awaiting_client' && 'Waiting for additional information from you'}
-                  {detailedRequest.status === 'completed' && 'Manual review complete - final report available'}
-                </p>
-              </div>
-              {detailedRequest.assessor_name && (
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Assessor</p>
-                  <p className="font-medium text-gray-900">{detailedRequest.assessor_name}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
-            <p className="text-green-800 font-medium">Assessment Completed</p>
-          </div>
-        )}
-
-        {/* Metadata */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Assessment Type</p>
-              <p className="font-medium text-gray-900 capitalize">{assessment.type}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Completed On</p>
-              <p className="font-medium text-gray-900">
-                {assessment.completedAt ? new Date(assessment.completedAt).toLocaleDateString() : '-'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Duration</p>
-              <p className="font-medium text-gray-900">
-                {assessment.durationMs ? `${Math.round(assessment.durationMs / 1000)}s` : '-'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Controls Assessed</p>
-              <p className="font-medium text-gray-900">{assessment.controlsAssessed || 0}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Score Band</p>
-              <p className="font-medium text-gray-900">{assessment.scoreBand || '-'}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Score Overview */}
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border p-6 text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Overall Security Score</h3>
-            <div className={`text-6xl font-bold ${scoreColor} my-4`}>
-              {assessment.overallScore || 0}/100
-            </div>
-            <div className={`inline-flex items-center px-4 py-2 rounded-full ${scoreBgColor} font-medium`}>
-              {assessment.scoreBand || 'N/A'}
-            </div>
-            {metadata.band_description && (
-              <p className="text-sm text-gray-600 mt-3">{metadata.band_description}</p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Results Overview</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Findings</h3>
-            <div className="space-y-3">
-              {findings.filter(f => f.result === 'fail').slice(0, 5).map((finding) => (
-                <div key={finding.id} className="flex items-start">
-                  <AlertTriangle className="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+       {/* Main Content */}
+       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+         {/* Status Banner */}
+         {detailedRequest ? (
+           <div className={`rounded-xl p-6 mb-8 ${
+             detailedRequest.status === 'completed' ? 'bg-green-50 border border-green-200' :
+             detailedRequest.status === 'in_review' ? 'bg-purple-50 border border-purple-200' :
+             detailedRequest.status === 'awaiting_client' ? 'bg-yellow-50 border border-yellow-200' :
+             'bg-blue-50 border border-blue-200'
+           }`}>
+             <div className="flex items-start justify-between">
+               <div className="flex items-center">
+                 <div className={`p-2 rounded-lg mr-4 ${
+                   detailedRequest.status === 'completed' ? 'bg-green-100' :
+                   detailedRequest.status === 'in_review' ? 'bg-purple-100' :
+                   detailedRequest.status === 'awaiting_client' ? 'bg-yellow-100' :
+                   'bg-blue-100'
+                 }`}>
+                   <CheckCircle2 className={`w-6 h-6 ${
+                     detailedRequest.status === 'completed' ? 'text-green-600' :
+                     detailedRequest.status === 'in_review' ? 'text-purple-600' :
+                     detailedRequest.status === 'awaiting_client' ? 'text-yellow-600' :
+                     'text-blue-600'
+                   }`} />
+                 </div>
+                 <div>
+                   <h2 className="text-xl font-bold text-gray-900">
+                     Detailed Assessment {detailedRequest.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                   </h2>
+                   <p className={`text-sm mt-1 ${
+                     detailedRequest.status === 'completed' ? 'text-green-600' :
+                     detailedRequest.status === 'in_review' ? 'text-purple-600' :
+                     detailedRequest.status === 'awaiting_client' ? 'text-yellow-600' :
+                     'text-blue-600'
+                   }`}>
+                     {detailedRequest.status === 'unassigned' && 'Waiting for an assessor to be assigned...'}
+                     {detailedRequest.status === 'assigned' && `Assigned to ${detailedRequest.assessor_name || 'an assessor'}`}
+                     {detailedRequest.status === 'in_review' && 'Assessor is currently reviewing your assessment'}
+                     {detailedRequest.status === 'awaiting_client' && 'Waiting for additional information from you'}
+                     {detailedRequest.status === 'completed' && 'Manual review complete - final report available'}
+                   </p>
+                 </div>
+               </div>
+               {detailedRequest.assessor_name && (
+                 <div className="text-right">
+                   <p className="text-sm text-gray-500">Assessor</p>
+                   <p className="font-medium text-gray-900">{detailedRequest.assessor_name}</p>
+                 </div>
+               )}
+             </div>
+           </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-green-100 rounded-full mr-4">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{finding.control_name || 'Unknown Control'}</p>
-                    <p className="text-xs text-gray-500 capitalize">{finding.severity} severity</p>
+                    <h2 className="text-xl font-bold text-gray-900">Assessment Completed</h2>
+                    <p className="text-sm text-gray-500 mt-1">Your assessment has completed successfully. Here are your results.</p>
                   </div>
                 </div>
-              ))}
-              {findings.filter(f => f.result === 'fail').length === 0 && (
-                <p className="text-sm text-gray-500">No failed findings</p>
-              )}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => router.push('/connect-tenant')}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Add Another Tenant
+                  </button>
+                  <button
+                    onClick={() => router.push('/history')}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1.5" />
+                    Back to Assessments
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Stat Strip */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+              <div className="flex items-start">
+                <div className="p-2 bg-primary-50 rounded-lg mr-3">
+                  <FileText className="w-4 h-4 text-primary-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Assessment Type</p>
+                  <p className="text-sm font-semibold text-gray-900 capitalize mt-1">{assessment.type}</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="p-2 bg-blue-50 rounded-lg mr-3">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tenant</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">{assessment.tenantName || '-'}</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="p-2 bg-green-50 rounded-lg mr-3">
+                  <Calendar className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Completed On</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">{formatCompletedOn(assessment.completedAt || '')}</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="p-2 bg-orange-50 rounded-lg mr-3">
+                  <Clock className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Duration</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">{formatDuration(assessment.durationMs || 0)}</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="p-2 bg-purple-50 rounded-lg mr-3">
+                  <ListChecks className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Controls Assessed</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">{assessment.controlsAssessed || 0}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Module Scores */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Module Scores</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {modules.map((module) => (
-              <div
-                key={module.id}
-                className={`border rounded-lg p-4 ${module.moduleName === 'Email' ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-                onClick={() => module.moduleName === 'Email' ? router.push(`/results/${assessment?.id}/email`) : undefined}
-              >
-                <p className="text-sm font-medium text-gray-900">{module.moduleName}</p>
-                <p className="text-2xl font-bold text-gray-900">{module.moduleScore || 0}/100</p>
-                <div className="flex space-x-2 mt-2 text-xs">
-                  <span className="text-green-600">{module.passedCount || 0} passed</span>
-                  <span className="text-red-600">{module.failedCount || 0} failed</span>
+          {/* Score + Module + Findings Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+            {/* Overall Security Score Gauge */}
+            <div className="lg:col-span-4 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4 text-center">Overall Security Score</p>
+              <div className="flex flex-col items-center">
+                <svg viewBox="0 0 200 120" className="w-full max-w-[220px]">
+                  <defs>
+                    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#EF4444" />
+                      <stop offset="50%" stopColor="#F59E0B" />
+                      <stop offset="100%" stopColor="#10B981" />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Background arc */}
+                  <path
+                    d="M 20 100 A 80 80 0 0 1 180 100"
+                    fill="none"
+                    stroke="#E5E7EB"
+                    strokeWidth={10}
+                    strokeLinecap="round"
+                  />
+                  
+                  {/* Score arc */}
+                  {(() => {
+                    const score = Math.min(Math.max(assessment.overallScore || 0, 0), 100);
+                    const angle = Math.PI * (1 - score / 100);
+                    const scoreX = 100 + 80 * Math.cos(angle);
+                    const scoreY = 100 + 80 * Math.sin(angle);
+                    return (
+                      <path
+                        d={`M 20 100 A 80 80 0 0 1 ${scoreX} ${scoreY}`}
+                        fill="none"
+                        stroke="url(#gaugeGradient)"
+                        strokeWidth={10}
+                        strokeLinecap="round"
+                      />
+                    );
+                  })()}
+                  
+                  {/* Needle */}
+                  {(() => {
+                    const score = Math.min(Math.max(assessment.overallScore || 0, 0), 100);
+                    const angle = Math.PI * (1 - score / 100);
+                    const scoreX = 100 + 80 * Math.cos(angle);
+                    const scoreY = 100 + 80 * Math.sin(angle);
+                    return (
+                      <line
+                        x1={100}
+                        y1={100}
+                        x2={scoreX}
+                        y2={scoreY}
+                        stroke="#1F2937"
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                      />
+                    );
+                  })()}
+                  
+                  {/* Center dot */}
+                  <circle cx={100} cy={100} r={5} fill="#1F2937" />
+                  
+                  {/* Score text */}
+                  <text x={100} y={88} textAnchor="middle" fontSize="28" fontWeight="bold" fill="#111827">
+                    {assessment.overallScore || 0}
+                  </text>
+                  <text x={100} y={104} textAnchor="middle" fontSize="11" fill="#6B7280">
+                    /100
+                  </text>
+                </svg>
+                
+                <div className="mt-4 text-center">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${scoreBgColor}`}>
+                    {assessment.scoreBand || 'N/A'}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-2 max-w-[180px]">
+                    {metadata.band_description || getPostureDescription(assessment.scoreBand || '', assessment.overallScore || 0)}
+                  </p>
                 </div>
-                {module.moduleName === 'Email' && (
-                  <p className="text-xs text-primary-600 mt-2 font-medium">Click for details</p>
-                )}
               </div>
-            ))}
+            </div>
+
+            {/* Per-Module Cards */}
+            <div className="lg:col-span-3 space-y-4">
+              {modules.map((module) => {
+                const total = (module.passedCount || 0) + (module.failedCount || 0) + (module.notApplicableCount || 0);
+                const score = module.moduleScore ?? (total > 0 ? Math.round(((module.passedCount || 0) / total) * 100) : 0);
+                const config = getModuleIcon(module.moduleName);
+                const Icon = config.icon;
+                return (
+                  <div
+                    key={module.id}
+                    className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 ${module.moduleName === 'Email' ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                    onClick={() => module.moduleName === 'Email' ? router.push(`/results/${assessment?.id}/email`) : undefined}
+                  >
+                    <div className="flex items-center mb-3">
+                      <div className={`p-2 rounded-lg mr-3 ${config.bgColor}`}>
+                        <Icon className={`w-5 h-5 ${config.color}`} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{module.moduleName}</p>
+                        <p className="text-xl font-bold text-gray-900">{score}/100</p>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                      <div className={`${config.barColor} h-2 rounded-full transition-all duration-500`} style={{ width: `${score}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="text-green-600 font-medium">{module.passedCount || 0} passed</span>
+                      <span className="text-red-600 font-medium">{module.failedCount || 0} failed</span>
+                      <span className="text-gray-400">{total} total</span>
+                    </div>
+                    {module.moduleName === 'Email' && (
+                      <p className="text-xs text-primary-600 mt-2 font-medium">Click for details</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Results Overview + Top Findings */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Results Overview */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4">Results Overview</h3>
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <div className="flex-shrink-0">
+                    <ResponsiveContainer width={180} height={180}>
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={80}
+                          paddingAngle={4}
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    {pieData.map((entry) => (
+                      <div key={entry.name} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center">
+                          <span className="w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: entry.color }} />
+                          <span className="text-gray-600">{entry.name}</span>
+                        </div>
+                        <span className="font-medium text-gray-900">{entry.value}</span>
+                      </div>
+                    ))}
+                    <div className="pt-3 border-t border-gray-100">
+                      <p className="text-xs text-gray-500">Total Controls</p>
+                      <p className="text-lg font-bold text-gray-900">{assessment.controlsAssessed || 0}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Findings */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Top Findings</h3>
+                  <button
+                    onClick={() => {
+                      setShowFindingsTable(true);
+                      setTimeout(() => {
+                        const el = document.getElementById('detailed-findings');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }}
+                    className="text-primary-600 hover:text-primary-700 text-xs font-medium"
+                  >
+                    View all findings
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {findings.filter(f => f.result === 'fail').slice(0, 5).map((finding) => (
+                    <div key={finding.id} className="flex items-center justify-between">
+                      <div className="flex items-start flex-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mr-3 ${getSeverityColor(finding.severity || 'medium')}`}>
+                          {finding.severity || 'medium'}
+                        </span>
+                        <p className="text-sm text-gray-900">{finding.control_name || 'Unknown Control'}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {findings.filter(f => f.result === 'fail').length === 0 && (
+                    <p className="text-sm text-gray-500">No failed findings</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Download Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">Download Report</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Reports will be available for download until {getReportExpiryDate()} ({getDaysUntilExpiry()} days remaining). After this date, the report will be archived and may require re-assessment to regenerate.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+                >
+                  <Download className="w-4 h-4 mr-1.5" />
+                  Download PDF Report
+                </button>
+                <button
+                  onClick={handleDownloadExcel}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  <Download className="w-4 h-4 mr-1.5" />
+                  Excel
+                </button>
+              </div>
+            </div>
+          </div>
 
         {/* Informational Metrics */}
         {findings.filter(f => f.result === 'info').length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Info className="w-5 h-5 text-blue-600 mr-2" />
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4 flex items-center">
+              <Info className="w-4 h-4 text-blue-600 mr-2" />
               Informational Metrics
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {findings.filter(f => f.result === 'info').map((finding) => (
                 <div key={finding.id} className="border rounded-lg p-4 bg-blue-50">
-                  <p className="text-sm font-medium text-gray-900">{finding.control_name || 'Unknown Control'}</p>
-                  <p className="text-xs text-gray-500 mt-1">{finding.module_name}</p>
-                  <p className="text-sm text-blue-800 mt-2">{finding.evidence}</p>
+                  <div className="flex items-start">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-3 flex-shrink-0">
+                      {finding.module_name === 'Email' ? <Mail className="w-4 h-4 text-blue-600" /> : <Shield className="w-4 h-4 text-blue-600" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{finding.control_name || 'Unknown Control'}</p>
+                      <p className="text-xs text-gray-500 mt-1">{finding.module_name}</p>
+                      <p className="text-sm text-blue-800 mt-2">{finding.evidence}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Report Retention Notice */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 flex items-center">
-          <Clock className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-blue-900">Report Retention Notice</p>
-            <p className="text-sm text-blue-700">
-              This report will be available for download until {getReportExpiryDate()} ({daysUntilExpiry} days remaining).
-              After this date, the report will be archived and may require re-assessment to regenerate.
-            </p>
-          </div>
-        </div>
-
-        {/* Assessment Owner (for Detailed tier) */}
+         {/* Assessment Owner (for Detailed tier) */}
         {metadata.assessment_owner && (
           <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -607,8 +907,8 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Detailed Findings Table */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
+         {/* Detailed Findings Table */}
+         <div id="detailed-findings" className="bg-white rounded-xl shadow-sm border p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Detailed Findings</h3>
             <button
@@ -658,7 +958,7 @@ export default function ResultsPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="min-w-[180px] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('control_name')}
                       >
                         <div className="flex items-center">
@@ -667,7 +967,7 @@ export default function ResultsPage() {
                         </div>
                       </th>
                       <th
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="w-[120px] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('module_name')}
                       >
                         <div className="flex items-center">
@@ -676,7 +976,7 @@ export default function ResultsPage() {
                         </div>
                       </th>
                       <th
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="w-24 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('severity')}
                       >
                         <div className="flex items-center">
@@ -685,7 +985,7 @@ export default function ResultsPage() {
                         </div>
                       </th>
                       <th
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="w-28 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('result')}
                       >
                         <div className="flex items-center">
@@ -693,64 +993,64 @@ export default function ResultsPage() {
                           {getSortIcon('result')}
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="min-w-[180px] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Recommendation
-                       </th>
-                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                         Evidence
-                       </th>
-                     </tr>
-                   </thead>
-                   <tbody className="bg-white divide-y divide-gray-200">
-                     {filteredFindings.map((finding) => (
-                       <tr key={finding.id} className="hover:bg-gray-50">
-                         <td className="px-4 py-4 whitespace-nowrap">
-                           <div className="text-sm font-medium text-gray-900">
-                             {finding.control_name || 'Unknown Control'}
-                           </div>
-                           <div className="text-xs text-gray-500">
-                             {finding.control_id || ''}
-                           </div>
-                         </td>
-                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                           {finding.module_name || '-'}
-                         </td>
-                         <td className="px-4 py-4 whitespace-nowrap">
-                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(finding.severity || 'medium')}`}>
-                             {finding.severity || 'medium'}
-                           </span>
-                         </td>
-                         <td className="px-4 py-4 whitespace-nowrap">
-                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getResultColor(finding.result || 'not_applicable')}`}>
-                             {finding.result === 'not_applicable' ? 'N/A' : finding.result || 'unknown'}
-                           </span>
-                         </td>
-                         <td className="px-4 py-4 text-sm text-gray-600 max-w-xs truncate">
-                           {finding.recommendation || '-'}
-                         </td>
-                         <td className="px-4 py-4 whitespace-nowrap">
-                           <button
-                             onClick={() => {
-                               setSelectedFinding(finding);
-                               setShowEvidenceModal(true);
-                             }}
-                             className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
-                           >
-                             <Eye className="w-4 h-4 mr-1" />
-                             View
-                           </button>
-                         </td>
-                       </tr>
-                     ))}
-                     {filteredFindings.length === 0 && (
-                       <tr>
-                         <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
-                           No findings match your filters
-                         </td>
-                       </tr>
-                     )}
-                   </tbody>
-                </table>
+                      </th>
+                      <th className="w-[80px] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Evidence
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredFindings.map((finding) => (
+                      <tr key={finding.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {finding.control_name || 'Unknown Control'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {finding.control_id || ''}
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 text-sm text-gray-900">
+                          {finding.module_name || '-'}
+                        </td>
+                        <td className="px-3 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(finding.severity || 'medium')}`}>
+                            {finding.severity || 'medium'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getResultColor(finding.result || 'not_applicable')}`}>
+                            {finding.result === 'not_applicable' ? 'N/A' : finding.result || 'unknown'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-4 text-sm text-gray-600 whitespace-normal">
+                          {finding.recommendation || '-'}
+                        </td>
+                        <td className="px-3 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => {
+                              setSelectedFinding(finding);
+                              setShowEvidenceModal(true);
+                            }}
+                            className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredFindings.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                          No findings match your filters
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+               </table>
               </div>
 
               {/* Pagination info */}
@@ -761,36 +1061,66 @@ export default function ResultsPage() {
           )}
         </div>
 
-        {/* Recommendations */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Recommendations</h3>
-          <div className="space-y-3">
-            {findings.filter(f => f.result === 'fail' && f.recommendation).slice(0, 5).map((finding, idx) => (
-              <div key={finding.id} className="flex items-start p-3 bg-red-50 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{finding.control_name || 'Unknown Control'}</p>
-                  <p className="text-sm text-gray-600 mt-1">{finding.recommendation}</p>
-                  <span className="inline-block mt-2 px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded capitalize">
-                    {finding.severity} severity
-                  </span>
-                </div>
-              </div>
-            ))}
-            {findings.filter(f => f.result === 'fail' && f.recommendation).length === 0 && (
-              <p className="text-sm text-gray-500">No critical recommendations at this time.</p>
-            )}
-          </div>
-        </div>
+         {/* Recommendations */}
+         <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
+           <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4">Key Recommendations</h3>
+           <div className="space-y-3">
+             {findings.filter(f => f.result === 'fail' && f.recommendation).slice(0, 5).map((finding) => (
+               <div key={finding.id} className={`flex items-start p-4 rounded-lg border-l-4 ${
+                 finding.severity === 'critical' ? 'border-red-500 bg-red-50' :
+                 finding.severity === 'high' ? 'border-orange-500 bg-orange-50' :
+                 finding.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
+                 'border-blue-500 bg-blue-50'
+               }`}>
+                 <div className="flex-1">
+                   <div className="flex items-center gap-2 mb-1">
+                     <p className="text-sm font-medium text-gray-900">{finding.control_name || 'Unknown Control'}</p>
+                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getSeverityColor(finding.severity || 'medium')}`}>
+                       {finding.severity || 'medium'}
+                     </span>
+                   </div>
+                   <p className="text-sm text-gray-600">{finding.recommendation}</p>
+                 </div>
+               </div>
+             ))}
+             {findings.filter(f => f.result === 'fail' && f.recommendation).length === 0 && (
+               <p className="text-sm text-gray-500">No critical recommendations at this time.</p>
+             )}
+           </div>
+         </div>
 
         {/* Next Steps */}
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Next Steps</h3>
-          <div className="space-y-3">
-            <p className="text-gray-600">1. Review the detailed findings above</p>
-            <p className="text-gray-600">2. Prioritize remediation based on severity</p>
-            <p className="text-gray-600">3. Download the full report for sharing with stakeholders</p>
-            <p className="text-gray-600">4. Schedule a re-assessment in 90 days to track improvement</p>
+        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-4">Next Steps</h3>
+          <div className="space-y-4">
+            <div className="flex items-start">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Review detailed findings</p>
+                <p className="text-xs text-gray-500 mt-0.5">Examine all failed and needs-review controls in the findings table below</p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Prioritize critical remediation</p>
+                <p className="text-xs text-gray-500 mt-0.5">Address Critical and High severity findings first</p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Download the full report</p>
+                <p className="text-xs text-gray-500 mt-0.5">Share PDF/Excel reports with stakeholders and track progress</p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">4</span>
+              <div>
+                <p className="text-sm font-medium text-gray-900">Schedule reassessment</p>
+                <p className="text-xs text-gray-500 mt-0.5">Re-assess after remediation to verify improvements</p>
+              </div>
+            </div>
           </div>
         </div>
 

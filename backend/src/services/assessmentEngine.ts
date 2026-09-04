@@ -194,6 +194,14 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
       }
     }
 
+    // Determine final assessment status based on module outcomes
+    const moduleStatuses = await query('SELECT collection_status FROM assessment_modules WHERE assessment_id = ?', [assessmentId]);
+    const hasFailedModules = (moduleStatuses as any[]).some((m: any) => m.collection_status === 'failed' || m.collection_status === 'permission_denied');
+    const assessmentStatus = hasFailedModules ? 'partial' : 'completed';
+
+    // Update assessment status before scoring (must be 'completed' or 'partial' for scoring gate)
+    await query('UPDATE assessments SET status = ? WHERE id = ?', [assessmentStatus, assessmentId]);
+
     const securityScore = await processAssessmentScore(assessmentId);
     if (!securityScore) {
       throw new Error(`processAssessmentScore returned no result for ${assessmentId}`);
@@ -204,7 +212,7 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
     // Update assessment with final results
     await query(
       'UPDATE assessments SET status = ?, overall_score = ?, score_band = ?, completed_at = NOW() WHERE id = ?',
-      ['completed', securityScore.overallScore ?? 0, band.scoreBand, assessmentId]
+      [assessmentStatus, securityScore.overallScore ?? 0, band.scoreBand, assessmentId]
     );
 
     // Store band color and description in assessment metadata
@@ -436,25 +444,29 @@ async function runEntraAssessment(
     return false;
   }
 
+  let result: any;
   try {
-    const result = type === 'quick'
+    result = type === 'quick'
       ? await entraCollector.collectForQuickAssessment()
       : await entraCollector.collectAll();
 
-    // Save raw data to files for verification - use assessmentId for folder name
     entraCollector.saveDataToFiles(assessmentId, 'Entra-ID', result);
 
-    // Store raw data
+    const collectionStatus = result.status === 'completed' ? 'completed' : result.status === 'partial' ? 'partial' : 'failed';
     await query(
       'UPDATE assessment_modules SET collection_status = ?, raw_data_path = ? WHERE id = ?',
-      [result.status === 'completed' ? 'completed' : 'failed', JSON.stringify(result), moduleId]
+      [collectionStatus, JSON.stringify(result), moduleId]
     );
+  } catch (error) {
+    console.error('Entra data collection error:', error);
+    await query('UPDATE assessment_modules SET collection_status = ? WHERE id = ?', ['failed', moduleId]);
+    return true;
+  }
 
-    // Get Entra ID controls from catalog
-    const entraControls = controlsToEvaluate.filter((c: any) => c.module_name === 'Entra ID');
+  const entraControls = controlsToEvaluate.filter((c: any) => c.module_name === 'Entra ID');
 
-    // Map control evaluation results to findings
-    for (const control of entraControls) {
+  for (const control of entraControls) {
+    try {
       const controlResult = result.controls[control.id];
 
       if (controlResult) {
@@ -473,7 +485,6 @@ async function runEntraAssessment(
           ]
         );
       } else {
-        // Control not evaluated by EntraCollector - use default evaluation
         const defaultResult = evaluateControl(control, { data: result.rawData, errors: [], moduleName: 'Entra ID', status: result.status, collectedAt: result.collectedAt });
         await query(
           `INSERT INTO findings (id, assessment_module_id, control_catalog_id, result, severity, evidence, recommendation, source)
@@ -490,14 +501,26 @@ async function runEntraAssessment(
           ]
         );
       }
+    } catch (error) {
+      console.error(`Entra control evaluation error for ${control.control_name}:`, error);
+      await query(
+        `INSERT INTO findings (id, assessment_module_id, control_catalog_id, result, severity, evidence, recommendation, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          uuidv4(),
+          moduleId,
+          control.id,
+          'needs_manual_review',
+          control.severity,
+          `Entra control evaluation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'This control requires manual review.',
+          'automated',
+        ]
+      );
     }
-
-    return true;
-  } catch (error) {
-    console.error('Entra assessment error:', error);
-    await query('UPDATE assessment_modules SET collection_status = ? WHERE id = ?', ['failed', moduleId]);
-    return false;
   }
+
+  return true;
 }
 
 async function runEmailSecurityAssessment(
@@ -534,43 +557,72 @@ async function runEmailSecurityAssessment(
     return true;
   }
 
+  let collectionStatus: string;
+  let result: any;
+
   try {
-    const result = type === 'detailed'
+    result = type === 'detailed'
       ? await collector.collectDetailed()
       : await collector.collectQuick();
 
     collector.saveDataToFiles(assessmentId, result);
 
-    const collectionStatus = result.status === 'completed' ? 'completed' : result.status === 'partial' ? 'partial' : 'failed';
+    collectionStatus = result.status === 'completed' ? 'completed' : result.status === 'partial' ? 'partial' : 'failed';
     await query(
       'UPDATE assessment_modules SET collection_status = ?, raw_data_path = ? WHERE id = ?',
       [collectionStatus, JSON.stringify(result), moduleId]
     );
+  } catch (error) {
+    console.error('Email security collection error:', error);
+    await query('UPDATE assessment_modules SET collection_status = ? WHERE id = ?', ['failed', moduleId]);
 
-    const emailControls = controlsToEvaluate.filter((c: any) => c.module_name === 'Email');
-
-    const authError = result.errors.find((e: any) => e.type === 'auth_error');
-    if (authError && result.status === 'failed') {
-      for (const control of emailControls) {
-        await query(
-          `INSERT INTO findings (id, assessment_module_id, control_catalog_id, result, severity, evidence, recommendation, source)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            uuidv4(),
-            moduleId,
-            control.id,
-            'error',
-            control.severity,
-            `Email security assessment authentication failed: ${authError.error}`,
-            'Reconnect the tenant to refresh authentication tokens, then retry the assessment.',
-            'automated',
-          ]
-        );
-      }
-      return true;
+    const moduleControls = controlsToEvaluate.filter((c: any) => c.module_name === 'Email');
+    for (const control of moduleControls) {
+      await query(
+        `INSERT INTO findings (id, assessment_module_id, control_catalog_id, result, severity, evidence, recommendation, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          uuidv4(),
+          moduleId,
+          control.id,
+          'error',
+          control.severity,
+          `Email security data collection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'Check Exchange Online connectivity and permissions.',
+          'automated',
+        ]
+      );
     }
+    return true;
+  } finally {
+    await collector.disconnect();
+  }
 
+  const emailControls = controlsToEvaluate.filter((c: any) => c.module_name === 'Email');
+
+  const authError = result.errors.find((e: any) => e.type === 'auth_error');
+  if (authError && result.status === 'failed') {
     for (const control of emailControls) {
+      await query(
+        `INSERT INTO findings (id, assessment_module_id, control_catalog_id, result, severity, evidence, recommendation, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          uuidv4(),
+          moduleId,
+          control.id,
+          'error',
+          control.severity,
+          `Email security assessment authentication failed: ${authError.error}`,
+          'Reconnect the tenant to refresh authentication tokens, then retry the assessment.',
+          'automated',
+        ]
+      );
+    }
+    return true;
+  }
+
+  for (const control of emailControls) {
+    try {
       const controlResult = evaluateEmailSecurityControl(control.control_name, result.data, result.rawResponses);
 
       if (!controlResult) {
@@ -605,15 +657,8 @@ async function runEmailSecurityAssessment(
           'automated',
         ]
       );
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Email security assessment error:', error);
-    await query('UPDATE assessment_modules SET collection_status = ? WHERE id = ?', ['failed', moduleId]);
-
-    const moduleControls = controlsToEvaluate.filter((c: any) => c.module_name === 'Email');
-    for (const control of moduleControls) {
+    } catch (error) {
+      console.error(`Email control evaluation error for ${control.control_name}:`, error);
       await query(
         `INSERT INTO findings (id, assessment_module_id, control_catalog_id, result, severity, evidence, recommendation, source)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -623,16 +668,15 @@ async function runEmailSecurityAssessment(
           control.id,
           'error',
           control.severity,
-          `Email security assessment failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          'Check Exchange Online connectivity and permissions.',
+          `Email security control evaluation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'This control requires manual review.',
           'automated',
         ]
       );
     }
-    return true;
-  } finally {
-    await collector.disconnect();
   }
+
+  return true;
 }
 
 function deriveBand(overallScore: number): { scoreBand: string; bandColor: string; bandDescription: string } {

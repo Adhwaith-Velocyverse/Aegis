@@ -19,6 +19,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const router = useRouter();
   const { user, logout } = useAuthStore();
 
@@ -27,8 +28,17 @@ export default function AccountPage() {
       setFullName(user.fullName);
       setPhoneNumber(user.phoneNumber || '');
       setEmail(user.email);
+      setCheckingAuth(false);
+    } else {
+      setCheckingAuth(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!checkingAuth && !user) {
+      router.push('/');
+    }
+  }, [checkingAuth, user, router]);
 
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +49,6 @@ export default function AccountPage() {
     try {
       await api.put('/users/me', { fullName });
       setSuccess('Name updated successfully');
-      // Update local storage
       const authStore = useAuthStore.getState();
       if (authStore.user) {
         authStore.login({ ...authStore.user, fullName }, authStore.user.token);
@@ -161,8 +170,15 @@ export default function AccountPage() {
     router.push('/');
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
   if (!user) {
-    router.push('/');
     return null;
   }
 
@@ -171,14 +187,12 @@ export default function AccountPage() {
     { id: 'phone', label: 'Phone', icon: <Phone className="w-4 h-4" /> },
     { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4" /> },
     { id: 'password', label: 'Password', icon: <Lock className="w-4 h-4" /> },
-    // Only show billing tab for owners
     ...(user?.orgRole === 'owner' ? [{ id: 'billing' as Tab, label: 'Billing', icon: <CreditCard className="w-4 h-4" /> }] : []),
     { id: 'danger', label: 'Danger Zone', icon: <Trash2 className="w-4 h-4" /> },
   ];
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -205,7 +219,6 @@ export default function AccountPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
@@ -220,7 +233,6 @@ export default function AccountPage() {
         )}
 
         <div className="grid md:grid-cols-4 gap-8">
-          {/* Sidebar */}
           <div className="md:col-span-1">
             <nav className="bg-white rounded-xl shadow-sm border overflow-hidden">
               {tabs.map((tab) => (
@@ -240,7 +252,6 @@ export default function AccountPage() {
             </nav>
           </div>
 
-          {/* Content */}
           <div className="md:col-span-3">
             <div className="bg-white rounded-xl shadow-sm border p-6">
               {activeTab === 'name' && (
@@ -440,7 +451,6 @@ export default function AccountPage() {
                     Once you delete your account, there is no going back. Please be certain.
                   </p>
 
-                  {/* Cancel Deletion (if scheduled) */}
                   {user?.deletedAt && (
                     <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50 mb-4">
                       <h3 className="text-sm font-medium text-yellow-800 mb-2">Account Deletion Scheduled</h3>
@@ -458,12 +468,11 @@ export default function AccountPage() {
                     </div>
                   )}
 
-                  {/* Delete Account */}
                   {!user?.deletedAt && (
                     <div className="border border-red-200 rounded-lg p-4 bg-red-50">
                       <h3 className="text-sm font-medium text-red-800 mb-2">Delete Account</h3>
                       <p className="text-sm text-red-700 mb-4">
-                        This will schedule your account for deletion in 30 days. During this grace period, you can cancel the deletion.
+                        This will schedule your account for deletion in 30 days. During this grace period, you can cancel this deletion.
                       </p>
                       <button
                         onClick={handleDeleteAccount}

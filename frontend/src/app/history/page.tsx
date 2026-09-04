@@ -45,7 +45,9 @@ export default function HistoryPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  const modules = ['Entra ID', 'M365 Admin Center', 'Purview', 'Email', 'Intune', 'Cloud Apps', 'Teams', 'SharePoint'];
+  const modules = ['Entra ID', 'Email'];
+  // Disabled modules (backend isActive: false) — kept for quick re-enable:
+  // 'M365 Admin Center', 'Purview', 'Intune', 'Cloud Apps', 'Teams', 'SharePoint'
 
   useEffect(() => {
     fetchAssessments();
@@ -416,103 +418,95 @@ export default function HistoryPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left">
-                    <button onClick={toggleSelectAll} className="text-gray-500 hover:text-gray-700">
-                      {selectedIds.size === filteredAssessments.length && filteredAssessments.length > 0 ?
-                        <CheckSquare className="w-5 h-5 text-primary-600" /> :
-                        <Square className="w-5 h-5" />
-                      }
-                    </button>
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    <div className="flex items-center">Request ID</div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('type')}>
-                    <div className="flex items-center">Type {getSortIcon('type')}</div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('overall_score')}>
-                    <div className="flex items-center">Score {getSortIcon('overall_score')}</div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('status')}>
-                    <div className="flex items-center">Status {getSortIcon('status')}</div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client/Tenant</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('created_at')}>
-                    <div className="flex items-center">Requested On {getSortIcon('created_at')}</div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('completed_at')}>
-                    <div className="flex items-center">Completed On {getSortIcon('completed_at')}</div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onClick={() => handleSort('duration_ms')}>
-                    <div className="flex items-center">Duration {getSortIcon('duration_ms')}</div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[100px]">
+                     <div className="flex items-center">Request ID</div>
+                   </th>
+                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 w-[100px]" onClick={() => handleSort('type')}>
+                     <div className="flex items-center">Type {getSortIcon('type')}</div>
+                   </th>
+                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 w-[90px]" onClick={() => handleSort('overall_score')}>
+                     <div className="flex items-center">Score {getSortIcon('overall_score')}</div>
+                   </th>
+                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 w-[120px]" onClick={() => handleSort('status')}>
+                     <div className="flex items-center">Status {getSortIcon('status')}</div>
+                   </th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase max-w-[180px]">Client/Tenant</th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 w-[100px]" onClick={() => handleSort('created_at')}>
+                     <div className="flex items-center">Requested On {getSortIcon('created_at')}</div>
+                   </th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 w-[100px]" onClick={() => handleSort('completed_at')}>
+                     <div className="flex items-center">Completed On {getSortIcon('completed_at')}</div>
+                   </th>
+                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 w-[80px]" onClick={() => handleSort('duration_ms')}>
+                     <div className="flex items-center">Duration {getSortIcon('duration_ms')}</div>
+                   </th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase min-w-[100px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredAssessments.map((assessment) => (
-                  <tr key={assessment.id} className={`hover:bg-gray-50 ${selectedIds.has(assessment.id) ? 'bg-primary-50' : ''}`}>
-                    <td className="px-4 py-4">
-                      <button onClick={() => toggleSelect(assessment.id)} className="text-gray-500 hover:text-gray-700">
-                        {selectedIds.has(assessment.id) ?
-                          <CheckSquare className="w-5 h-5 text-primary-600" /> :
-                          <Square className="w-5 h-5" />
-                        }
-                      </button>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Hash className="w-4 h-4 text-gray-400 mr-1.5" />
-                        <span className="text-sm font-mono text-gray-900">{assessment.id.slice(0, 8)}...</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getTypeColor(assessment.type)}`}>
-                        {assessment.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {assessment.overallScore !== undefined ? (
-                        <div className="flex items-center">
-                          <BarChart3 className={`w-4 h-4 mr-2 ${getScoreColor(assessment.overallScore)}`} />
-                          <span className={`font-medium ${getScoreColor(assessment.overallScore)}`}>
-                            {assessment.overallScore}/100
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {getStatusIcon(assessment.status)}
-                        <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          assessment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          assessment.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                          assessment.status === 'failed' ? 'bg-red-100 text-red-800' :
-                          assessment.status === 'pending' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {assessment.status === 'pending' && detailedRequests[assessment.id] ?
-                            'Pending Review' :
-                            assessment.status.replace('_', ' ')}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {assessment.tenantName || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {new Date(assessment.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {assessment.completedAt ? new Date(assessment.completedAt).toLocaleDateString() : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {assessment.durationMs ? `${Math.round(assessment.durationMs / 1000)}s` : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center space-x-2">
+                   <tr key={assessment.id} className={`hover:bg-gray-50 ${selectedIds.has(assessment.id) ? 'bg-primary-50' : ''}`}>
+                     <td className="px-4 py-4">
+                       <button onClick={() => toggleSelect(assessment.id)} className="text-gray-500 hover:text-gray-700">
+                         {selectedIds.has(assessment.id) ?
+                           <CheckSquare className="w-5 h-5 text-primary-600" /> :
+                           <Square className="w-5 h-5" />
+                         }
+                       </button>
+                     </td>
+                     <td className="px-4 py-4 whitespace-nowrap">
+                       <div className="flex items-center">
+                         <Hash className="w-4 h-4 text-gray-400 mr-1.5" />
+                         <span className="text-sm font-mono text-gray-900">{assessment.id.slice(0, 8)}...</span>
+                       </div>
+                     </td>
+                     <td className="px-3 py-4 whitespace-nowrap">
+                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getTypeColor(assessment.type)}`}>
+                         {assessment.type}
+                       </span>
+                     </td>
+                     <td className="px-3 py-4 whitespace-nowrap">
+                       {assessment.overallScore !== undefined ? (
+                         <div className="flex items-center">
+                           <BarChart3 className={`w-4 h-4 mr-2 ${getScoreColor(assessment.overallScore)}`} />
+                           <span className={`font-medium ${getScoreColor(assessment.overallScore)}`}>
+                             {assessment.overallScore}/100
+                           </span>
+                         </div>
+                       ) : (
+                         <span className="text-gray-400">-</span>
+                       )}
+                     </td>
+                     <td className="px-3 py-4 whitespace-nowrap">
+                       <div className="flex items-center">
+                         {getStatusIcon(assessment.status)}
+                         <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                           assessment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                           assessment.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                           assessment.status === 'failed' ? 'bg-red-100 text-red-800' :
+                           assessment.status === 'pending' ? 'bg-blue-100 text-blue-800' :
+                           'bg-gray-100 text-gray-800'
+                         }`}>
+                           {assessment.status === 'pending' && detailedRequests[assessment.id] ?
+                             'Pending Review' :
+                             assessment.status.replace('_', ' ')}
+                         </span>
+                       </div>
+                     </td>
+                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600 max-w-[180px] truncate">
+                       {assessment.tenantName || '-'}
+                     </td>
+                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                       {new Date(assessment.createdAt).toLocaleDateString()}
+                     </td>
+                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                       {assessment.completedAt ? new Date(assessment.completedAt).toLocaleDateString() : '-'}
+                     </td>
+                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-600">
+                       {assessment.durationMs ? `${Math.round(assessment.durationMs / 1000)}s` : '-'}
+                     </td>
+                     <td className="px-4 py-4 whitespace-nowrap text-sm min-w-[100px]">
+                       <div className="flex items-center space-x-2 flex-shrink-0">
                         {assessment.status === 'completed' && (
                           <>
                             <button

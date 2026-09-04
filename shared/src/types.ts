@@ -192,6 +192,109 @@ export interface UsageLedger {
   createdAt: Date;
 }
 
+export interface DashboardTenantContext {
+  id: string;
+  tenantName: string;
+  connectionStatus: 'connected' | 'needs_attention' | 'disconnected';
+  lastHealthCheck?: string;
+  lastAssessedAt?: string;
+}
+
+export interface DashboardLatestAssessment {
+  id: string;
+  type: 'trial' | 'quick' | 'detailed';
+  status: string;
+  overallScore: number | null;
+  securityRating: string;
+  scoreBand?: string;
+  bandColor?: string;
+  bandDescription?: string;
+  completedAt?: string;
+  calculatedAt?: string;
+  summary: {
+    totalControls: number;
+    assessedControls: number;
+    passedControls: number;
+    failedControls: number;
+    partialControls: number;
+    notAssessedControls: number;
+    technicalErrors: number;
+  };
+  severityBreakdown: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  categoryScores: Array<{
+    name: string;
+    score: number;
+    totalControls: number;
+    passedControls: number;
+    failedControls: number;
+    partialControls: number;
+    notAssessedControls: number;
+  }>;
+}
+
+export interface DashboardActiveAssessment {
+  id: string;
+  type: string;
+  status: string;
+  startedAt: string;
+  progress: {
+    total: number;
+    completed: number;
+    failed: number;
+    percent: number;
+  };
+}
+
+export interface DashboardFinding {
+  id: string;
+  controlName: string;
+  moduleName: string;
+  result: string;
+  severity: string;
+  evidence: string;
+  recommendation: string;
+}
+
+export interface DashboardRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  severity: string;
+  priority: number;
+  remediation?: string;
+  affectedControls?: string[];
+}
+
+export interface DashboardRecentAssessment {
+  id: string;
+  type: string;
+  status: string;
+  overallScore?: number;
+  scoreBand?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface DashboardTrend {
+  trialScores: Array<{ date: string; score: number }>;
+  postureScores: Array<{ date: string; score: number; type: string }>;
+}
+
+export interface DashboardSummary {
+  tenant: DashboardTenantContext | null;
+  latestAssessment: DashboardLatestAssessment | null;
+  activeAssessment: DashboardActiveAssessment | null;
+  priorityFindings: DashboardFinding[];
+  recommendations: DashboardRecommendation[];
+  recentAssessments: DashboardRecentAssessment[];
+  trend: DashboardTrend;
+}
+
 export interface TrialQuestionnaire {
   id: string;
   question: string;

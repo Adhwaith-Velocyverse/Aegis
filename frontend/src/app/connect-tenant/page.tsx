@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Shield, Download, CheckCircle2, ExternalLink, Key, XCircle, AlertTriangle, RefreshCw, Settings, Server, Lock, Mail, Users, Cloud, MessageSquare, HardDrive, ShieldCheck } from 'lucide-react';
@@ -23,16 +23,10 @@ interface Connection {
 
 const MODULES = [
   { name: 'Entra ID', icon: Users, description: 'Identity, access policies, conditional access' },
-  { name: 'M365 Admin Center', icon: Settings, description: 'Organization settings, sharing, policies' },
-  { name: 'Purview', icon: Shield, description: 'Compliance, DLP, data classification' },
   { name: 'Email', icon: Mail, description: 'Exchange Online, anti-phishing, anti-spam' },
-  { name: 'Intune', icon: HardDrive, description: 'Device management, compliance, encryption' },
-  { name: 'Cloud Apps', icon: Cloud, description: 'Cloud app security, conditional access' },
-  { name: 'Teams', icon: MessageSquare, description: 'Teams settings, external access, meetings' },
-  { name: 'SharePoint', icon: Server, description: 'Sharing, external access, permissions' },
 ];
 
-export default function ConnectTenantPage() {
+function ConnectTenantContent() {
   const [connectionMethod, setConnectionMethod] = useState<'oauth' | 'direct'>('direct');
   const [tenantId, setTenantId] = useState('');
   const [tenantName, setTenantName] = useState('');
@@ -589,5 +583,17 @@ export default function ConnectTenantPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConnectTenantPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <ConnectTenantContent />
+    </Suspense>
   );
 }

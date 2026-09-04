@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
-import { ChevronRight, CheckCircle2, AlertTriangle, Download, RefreshCw, Shield, Lock, Server, Users, Key, FileText, HardDrive, GraduationCap } from 'lucide-react';
+import { ChevronRight, CheckCircle2, AlertTriangle, Download, RefreshCw, Shield, Lock, Server, Users, Key, FileText, HardDrive, GraduationCap, ArrowLeft } from 'lucide-react';
 
 interface Question {
   id: string;
@@ -192,6 +192,15 @@ export default function TrialPage() {
     return (
       <div className="min-h-screen py-12">
         <div className="max-w-4xl mx-auto px-4">
+          {/* Back to Dashboard */}
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
+
           {/* Status Banner */}
           <div className="bg-white rounded-xl shadow-sm border p-8 text-center mb-8">
             <div className="flex items-center justify-center mb-4">
@@ -326,6 +335,13 @@ export default function TrialPage() {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => router.push('/')}
+                className="bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </button>
               <button
                 onClick={handleDownload}
                 className="bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center"

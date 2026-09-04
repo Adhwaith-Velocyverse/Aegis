@@ -17,6 +17,7 @@ import billingRoutes from './routes/billing';
 import organizationRoutes from './routes/organizations';
 import notificationRoutes from './routes/notifications';
 import controlsRoutes from './routes/controls';
+import dashboardRoutes from './routes/dashboard';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter, authLimiter, assessmentLimiter } from './middleware/rateLimiter';
 import {
@@ -138,6 +139,7 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/controls', controlsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling
 app.use(errorHandler);
