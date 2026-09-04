@@ -13,6 +13,7 @@ export class Microsoft365ConnectionManager {
   private tenantName!: string;
   private organizationId!: string;
   private authMode!: AuthenticationMode;
+  private azureTenantId?: string;
   private graphClient: GraphHttpClient | null = null;
   private graphPsService: GraphPowerShellService | null = null;
   private exchangeService: ExchangeOnlineService | null = null;
@@ -49,6 +50,7 @@ export class Microsoft365ConnectionManager {
     this.tenantId = conn.tenant_id;
     this.tenantName = conn.tenant_name;
     this.organizationId = conn.organization_id;
+    this.azureTenantId = conn.azure_tenant_id;
     this.authMode = (conn.certificate_thumbprint || conn.azure_client_secret_encrypted)
       ? AuthenticationMode.APPLICATION
       : AuthenticationMode.DELEGATED;
@@ -67,7 +69,12 @@ export class Microsoft365ConnectionManager {
     await this.authenticate();
     await this.updateState(M365ConnectionState.CONNECTED);
 
-    const health = await this.healthService.performFullHealthCheck(this.graphClient, this.exchangeService, this.tenantId);
+    const health = await this.healthService.performFullHealthCheck(
+      this.graphClient,
+      this.exchangeService,
+      this.tenantId,
+      this.authMode === AuthenticationMode.APPLICATION ? this.azureTenantId : undefined
+    );
     if (health.status === M365ConnectionState.HEALTHY) {
       await this.updateState(M365ConnectionState.HEALTHY);
     } else if (health.status === M365ConnectionState.DEGRADED) {
@@ -98,7 +105,11 @@ export class Microsoft365ConnectionManager {
 
     this.graphClient = new GraphHttpClient(accessToken, this.tenantId);
 
-    const tenantResult = await this.tenantValidator.validateTenant(this.graphClient, this.tenantId);
+    const tenantResult = await this.tenantValidator.validateTenant(
+      this.graphClient,
+      this.tenantId,
+      this.authMode === AuthenticationMode.APPLICATION ? this.azureTenantId : undefined
+    );
     if (!tenantResult.valid) {
       await this.updateState(M365ConnectionState.TENANT_VALIDATION_FAILED);
       throw new Error(tenantResult.error || 'Tenant validation failed');
@@ -107,13 +118,21 @@ export class Microsoft365ConnectionManager {
     const graphPs = await getGraphPowerShellService(this.tenantConnectionId);
     if (graphPs) {
       this.graphPsService = graphPs;
-      await graphPs.connect();
+      try {
+        await graphPs.connect();
+      } catch (psError: any) {
+        console.error(`Graph PowerShell connection failed for ${this.tenantConnectionId}:`, psError.message);
+      }
     }
 
     const exchange = await getExchangeOnlineService(this.tenantConnectionId);
     if (exchange) {
       this.exchangeService = exchange;
-      await exchange.connect();
+      try {
+        await exchange.connect();
+      } catch (exError: any) {
+        console.error(`Exchange Online connection failed for ${this.tenantConnectionId}:`, exError.message);
+      }
     }
   }
 

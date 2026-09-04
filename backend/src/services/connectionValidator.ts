@@ -5,7 +5,11 @@ import { ExchangeOnlineService } from './exchangeOnlineService';
 import { M365ConnectionState, AuthenticationMode, HealthCheckResult } from '../types/m365';
 
 export class TenantValidator {
-  async validateTenant(client: GraphHttpClient, expectedTenantId: string): Promise<{ valid: boolean; actualTenantId?: string; error?: string }> {
+  async validateTenant(
+    client: GraphHttpClient,
+    expectedTenantId: string,
+    expectedAzureTenantId?: string
+  ): Promise<{ valid: boolean; actualTenantId?: string; error?: string }> {
     try {
       const orgData = await client.request<{ value: { id: string; verifiedDomains: { name: string }[] }[] }>({
         tenantConnectionId: expectedTenantId,
@@ -19,11 +23,23 @@ export class TenantValidator {
       }
 
       const actualTenantId = org.id;
-      if (actualTenantId.toLowerCase() !== expectedTenantId.toLowerCase()) {
+      const verifiedDomains: string[] = (org.verifiedDomains || [])
+        .map((d: any) => (typeof d === 'string' ? d : d?.name))
+        .map((d: string) => d.trim().toLowerCase())
+        .filter(Boolean);
+      const expected = expectedTenantId.trim().toLowerCase();
+      const expectedAzure = expectedAzureTenantId?.trim().toLowerCase();
+
+      const isMatch =
+        actualTenantId.toLowerCase() === expected ||
+        (expectedAzure ? actualTenantId.toLowerCase() === expectedAzure : false) ||
+        verifiedDomains.includes(expected);
+
+      if (!isMatch) {
         return {
           valid: false,
           actualTenantId,
-          error: `Tenant mismatch: expected ${expectedTenantId}, authenticated as ${actualTenantId}`,
+          error: `Tenant mismatch: expected ${expectedTenantId}, authenticated as ${actualTenantId}${verifiedDomains.length ? ` (verified domains: ${verifiedDomains.join(', ')})` : ''}`,
         };
       }
 
@@ -35,7 +51,8 @@ export class TenantValidator {
 
   async validateTenantWithPowerShell(
     psService: GraphPowerShellService,
-    expectedTenantId: string
+    expectedTenantId: string,
+    expectedAzureTenantId?: string
   ): Promise<{ valid: boolean; actualTenantId?: string; error?: string }> {
     try {
       const orgs = await psService.executeCommand('Get-MgOrganization', { Select: 'id,verifiedDomains' });
@@ -44,13 +61,27 @@ export class TenantValidator {
         return { valid: false, error: 'No organization data returned from Microsoft Graph PowerShell' };
       }
       const actualTenantId = org.Id || org.id;
-      if (actualTenantId.toLowerCase() !== expectedTenantId.toLowerCase()) {
+      const verifiedDomainsRaw = org.VerifiedDomains || org.verifiedDomains || [];
+      const verifiedDomains: string[] = (verifiedDomainsRaw || [])
+        .map((d: any) => (typeof d === 'string' ? d : d?.name))
+        .map((d: string) => d.trim().toLowerCase())
+        .filter(Boolean);
+      const expected = expectedTenantId.trim().toLowerCase();
+      const expectedAzure = expectedAzureTenantId?.trim().toLowerCase();
+
+      const isMatch =
+        (actualTenantId || '').toLowerCase() === expected ||
+        (expectedAzure ? actualTenantId.toLowerCase() === expectedAzure : false) ||
+        verifiedDomains.includes(expected);
+
+      if (!isMatch) {
         return {
           valid: false,
           actualTenantId,
-          error: `Tenant mismatch: expected ${expectedTenantId}, authenticated as ${actualTenantId}`,
+          error: `Tenant mismatch: expected ${expectedTenantId}, authenticated as ${actualTenantId}${verifiedDomains.length ? ` (verified domains: ${verifiedDomains.join(', ')})` : ''}`,
         };
       }
+
       return { valid: true, actualTenantId };
     } catch (error: any) {
       return { valid: false, error: error.message || 'Tenant validation failed' };
@@ -140,7 +171,8 @@ export class ConnectionHealthService {
   async performFullHealthCheck(
     graphClient: GraphHttpClient | null,
     exchangeService: ExchangeOnlineService | null,
-    tenantId: string
+    tenantId: string,
+    expectedAzureTenantId?: string
   ): Promise<HealthCheckResult> {
     const result: HealthCheckResult = {
       status: M365ConnectionState.HEALTHY,
@@ -164,7 +196,7 @@ export class ConnectionHealthService {
         result.errors.push(graphHealth.error || 'Graph health check failed');
       }
 
-      const tenantResult = await tenantValidator.validateTenant(graphClient, tenantId);
+      const tenantResult = await tenantValidator.validateTenant(graphClient, tenantId, expectedAzureTenantId);
       result.tenantValidated = tenantResult.valid;
       result.details.push(`Tenant validation: ${tenantResult.valid ? 'OK' : 'FAILED'}`);
       if (!tenantResult.valid) {

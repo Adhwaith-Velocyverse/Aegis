@@ -97,16 +97,16 @@ export default function ConsentPage() {
   const [connectionId, setConnectionId] = useState<string | null>(null);
   const [consentStatus, setConsentStatus] = useState<Record<string, { consented: boolean; missingScopes: string[]; connectorType: string }>>({});
   const [isIncremental, setIsIncremental] = useState(false);
-  const [assessmentType, setAssessmentType] = useState<'quick' | 'detailed'>('quick');
+  const [assessmentType, setAssessmentType] = useState<'quick' | 'detailed' | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const connId = searchParams.get('connectionId');
-    const type = searchParams.get('type') as 'quick' | 'detailed' | null;
+    const assessmentType = searchParams.get('assessmentType') as 'quick' | 'detailed' | null;
     if (connId) {
       setConnectionId(connId);
-      setAssessmentType(type || 'quick');
+      if (assessmentType) setAssessmentType(assessmentType);
       fetchConsentStatus(connId);
     } else {
       router.push('/connect-tenant');
@@ -144,19 +144,27 @@ export default function ConsentPage() {
     setLoading(true);
     try {
       // Use incremental consent endpoint
-      const response = await api.post('/tenants/consent/incremental', {
+      const requestBody = {
         connectionId,
         modules: selectedModules,
         assessmentType,
-      });
+      };
+      const response = await api.post('/tenants/consent/incremental', requestBody);
 
       if (response.data.data?.requiresConsent && response.data.data.authUrl) {
         // Store selected modules for the OAuth flow
         sessionStorage.setItem('consentedModules', JSON.stringify(selectedModules));
+        if (assessmentType) {
+          sessionStorage.setItem('pendingAssessmentType', assessmentType);
+        }
         window.location.href = response.data.data.authUrl;
       } else if (response.data.data?.requiresConsent === false) {
-        // All modules already consented, proceed to assessment
-        router.push(`/assessment/${assessmentType}?connectionId=${connectionId}`);
+        // All modules already consented, proceed to assessment or dashboard
+        if (assessmentType) {
+          router.push(`/assessment/${assessmentType}?connectionId=${connectionId}`);
+        } else {
+          router.push('/');
+        }
       }
     } catch (error) {
       console.error('Failed to initiate consent:', error);
@@ -177,7 +185,7 @@ export default function ConsentPage() {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
@@ -198,7 +206,7 @@ export default function ConsentPage() {
               <div>
                 <h3 className="text-sm font-medium text-blue-800">Incremental Consent</h3>
                 <p className="text-sm text-blue-700 mt-1">
-                  You have already granted some permissions. We will only request the <strong>{newScopesCount} new permission{newScopesCount !== 1 ? 's' : ''}</strong> needed for the {assessmentType === 'detailed' ? 'Detailed' : 'Quick'} Assessment. Previously granted permissions remain active.
+                  You have already granted some permissions. We will only request the <strong>{newScopesCount} new permission{newScopesCount !== 1 ? 's' : ''}</strong> needed{assessmentType ? ` for the ${assessmentType === 'detailed' ? 'Detailed' : 'Quick'} Assessment` : ''}. Previously granted permissions remain active.
                 </p>
               </div>
             </div>

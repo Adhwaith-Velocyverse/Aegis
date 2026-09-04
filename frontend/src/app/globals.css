@@ -10,13 +10,76 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
   min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.15) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-position: 0 0;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.global-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.global-bg__gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 70% 10%, rgba(59, 130, 246, 0.08) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(239, 246, 255, 0.4) 0%, rgba(248, 250, 252, 0.2) 40%, rgba(255, 255, 255, 0) 100%);
+}
+
+.global-bg__waves {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40vh;
+  opacity: 0.35;
+}
+
+.global-bg__dots {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 320px;
+  height: 320px;
+  opacity: 0.5;
+  background-image: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.25) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+.global-bg__network {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 360px;
+  opacity: 0.35;
 }
 
 @layer utilities {
@@ -41,5 +104,5 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #94a3af;
 }

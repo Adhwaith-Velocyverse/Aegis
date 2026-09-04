@@ -302,7 +302,6 @@ export class ExchangeOnlineService {
     const supportsAllAndResultSize = new Set([
       'Get-Mailbox',
       'Get-CASMailbox',
-      'Get-DistributionGroup',
     ]);
 
     const supportsResultSizeOnly = new Set([
@@ -310,6 +309,7 @@ export class ExchangeOnlineService {
       'Get-EXOCASMailbox',
       'Get-UnifiedGroup',
       'Get-DynamicDistributionGroup',
+      'Get-DistributionGroup',
     ]);
 
     let commandScript = `${cmdlet} ${paramStrings}`.trim();

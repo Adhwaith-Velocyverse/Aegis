@@ -37,12 +37,24 @@ export default function TrialPage() {
     noCount: number;
     unsureCount: number;
   } | null>(null);
+  const [hasConnectedTenant, setHasConnectedTenant] = useState<boolean | null>(null);
   const router = useRouter();
   const { user } = useAuthStore();
 
   useEffect(() => {
     fetchQuestions();
+    fetchTenants();
   }, []);
+
+  const fetchTenants = async () => {
+    try {
+      const response = await api.get('/tenants');
+      const tenants = response.data.data || [];
+      setHasConnectedTenant(tenants.some((t: any) => t.connectionStatus === 'connected'));
+    } catch (error) {
+      console.error('Failed to fetch tenants:', error);
+    }
+  };
 
   const fetchQuestions = async () => {
     try {
@@ -178,7 +190,7 @@ export default function TrialPage() {
                          result.bandColor === 'blue' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
 
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen py-12">
         <div className="max-w-4xl mx-auto px-4">
           {/* Status Banner */}
           <div className="bg-white rounded-xl shadow-sm border p-8 text-center mb-8">
@@ -263,27 +275,54 @@ export default function TrialPage() {
               </ul>
             </div>
 
-            {/* Need Help Panel */}
-            <div className="bg-primary-50 rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Need Help Improving Your Score?</h3>
-              <p className="text-gray-600 mb-4">
-                Connect your Microsoft 365 tenant to Aegis for a comprehensive automated assessment. Our engine will analyze your actual tenant configuration and provide detailed recommendations.
-              </p>
-            </div>
+            {hasConnectedTenant === false && (
+              <>
+                {/* Need Help Panel */}
+                <div className="bg-primary-50 rounded-lg p-6 mb-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Need Help Improving Your Score?</h3>
+                  <p className="text-gray-600 mb-4">
+                    Connect your Microsoft 365 tenant to Aegis for a comprehensive automated assessment. Our engine will analyze your actual tenant configuration and provide detailed recommendations.
+                  </p>
+                </div>
 
-            {/* CTA Banner */}
-            <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-8 mb-8 text-white">
-              <h3 className="text-2xl font-bold mb-2">Connect the Tenant to the Tool</h3>
-              <p className="text-primary-100 mb-6">
-                Get a verified, automated security assessment of your Microsoft 365 environment. No more self-reporting - let our engine do the work.
-              </p>
-              <button
-                onClick={() => router.push('/connect-tenant')}
-                className="bg-white text-primary-700 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
-              >
-                Connect Your Tenant Now
-              </button>
-            </div>
+                {/* CTA Banner */}
+                <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-8 mb-8 text-white">
+                  <h3 className="text-2xl font-bold mb-2">Connect the Tenant to the Tool</h3>
+                  <p className="text-primary-100 mb-6">
+                    Get a verified, automated security assessment of your Microsoft 365 environment. No more self-reporting - let our engine do the work.
+                  </p>
+                  <button
+                    onClick={() => router.push('/connect-tenant')}
+                    className="bg-white text-primary-700 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
+                  >
+                    Connect Your Tenant Now
+                  </button>
+                </div>
+              </>
+            )}
+
+            {hasConnectedTenant === true && (
+              <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-8 mb-8 text-white">
+                <h3 className="text-2xl font-bold mb-2">Ready for a Deeper Analysis?</h3>
+                <p className="text-primary-100 mb-6">
+                  You already have a connected tenant. Run a Quick or Detailed assessment to get a comprehensive, automated security analysis with findings and recommendations.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                  <button
+                    onClick={() => router.push('/assessment/quick')}
+                    className="flex-1 bg-white text-primary-700 py-3 px-6 rounded-lg font-semibold hover:bg-primary-50 transition-colors flex items-center justify-center"
+                  >
+                    Start Quick Assessment
+                  </button>
+                  <button
+                    onClick={() => router.push('/assessment/detailed')}
+                    className="flex-1 bg-white text-primary-700 py-3 px-6 rounded-lg font-semibold hover:bg-primary-50 transition-colors border border-primary-200 flex items-center justify-center"
+                  >
+                    Start Detailed Assessment
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -322,7 +361,7 @@ export default function TrialPage() {
   const answeredCount = Object.keys(answers).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-3xl mx-auto px-4">
         {/* Info Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start">

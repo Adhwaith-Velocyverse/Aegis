@@ -117,7 +117,8 @@ async function seed() {
 
   for (const q of questions) {
     await query(
-      `INSERT IGNORE INTO trial_questionnaires (id, question, category, weight, order_num) VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO trial_questionnaires (id, question, category, weight, order_num) VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE question = VALUES(question), category = VALUES(category), weight = VALUES(weight)`,
       [q.id, q.question, q.category, q.weight, q.order]
     );
   }

@@ -68,11 +68,24 @@ export default function ConnectTenantPage() {
       // Fetch connections after OAuth connection
       fetchConnections();
 
-      // Auto-redirect to assessment if assessmentType is provided
+      // Auto-redirect to assessment if assessmentType is provided, otherwise go to Dashboard
       if (assessmentTypeParam && ['quick', 'detailed'].includes(assessmentTypeParam)) {
         setTimeout(() => {
           router.push(`/assessment/${assessmentTypeParam}?connectionId=${connectionIdParam}`);
         }, 1000);
+      } else {
+        // Fallback: check sessionStorage if backend state was lost (e.g., process restart)
+        const pendingAssessmentType = sessionStorage.getItem('pendingAssessmentType');
+        if (pendingAssessmentType && ['quick', 'detailed'].includes(pendingAssessmentType)) {
+          sessionStorage.removeItem('pendingAssessmentType');
+          setTimeout(() => {
+            router.push(`/assessment/${pendingAssessmentType}?connectionId=${connectionIdParam}`);
+          }, 1000);
+        } else {
+          setTimeout(() => {
+            router.push('/');
+          }, 1000);
+        }
       }
     } else if (errorParam) {
       setError(decodeURIComponent(errorParam));
@@ -112,15 +125,15 @@ export default function ConnectTenantPage() {
 
     try {
       const payload: any = {
-        tenantId,
-        tenantName,
+        tenantId: tenantId.trim(),
+        tenantName: tenantName.trim(),
         connectionMethod,
       };
 
       if (connectionMethod === 'direct') {
-        payload.azureTenantId = azureTenantId;
-        payload.azureClientId = azureClientId;
-        payload.azureClientSecret = azureClientSecret;
+        payload.azureTenantId = azureTenantId.trim();
+        payload.azureClientId = azureClientId.trim();
+        payload.azureClientSecret = azureClientSecret.trim();
       }
 
       const response = await api.post('/tenants/connect', payload);
@@ -128,8 +141,11 @@ export default function ConnectTenantPage() {
       if (response.data.data.authUrl) {
         // OAuth flow - redirect to consent page first
         const connectionId = response.data.data.connectionId;
-        const assessmentType = searchParams.get('type') || 'quick';
-        router.push(`/consent?connectionId=${connectionId}&type=${assessmentType}`);
+        const assessmentType = searchParams.get('assessmentType');
+        const consentUrl = assessmentType
+          ? `/consent?connectionId=${connectionId}&assessmentType=${assessmentType}`
+          : `/consent?connectionId=${connectionId}`;
+        router.push(consentUrl);
       } else {
         // Direct connection - validation completed on backend
         setLoading(false);
@@ -151,8 +167,12 @@ export default function ConnectTenantPage() {
     setLoading(true);
     try {
       await api.post(`/tenants/verify/${connectionId}`);
-      // Connection verified successfully
-      router.push('/');
+      const assessmentType = searchParams.get('assessmentType');
+      if (assessmentType && ['quick', 'detailed'].includes(assessmentType)) {
+        router.push(`/assessment/${assessmentType}?connectionId=${connectionId}`);
+      } else {
+        router.push('/');
+      }
     } catch (error) {
       console.error('Failed to verify connection:', error);
       setLoading(false);
@@ -212,7 +232,7 @@ export default function ConnectTenantPage() {
 
   if (connectSuccess && connectionId) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen py-12">
         <div className="max-w-6xl mx-auto px-4">
           <div className="bg-white rounded-xl shadow-sm border p-8 text-center mb-8">
             <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
@@ -242,7 +262,7 @@ export default function ConnectTenantPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12">
           <Shield className="w-16 h-16 text-primary-600 mx-auto mb-4" />

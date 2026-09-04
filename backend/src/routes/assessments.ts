@@ -9,6 +9,8 @@ import { z } from 'zod';
 import { auditLog } from '../middleware/audit';
 import { canRunAssessment } from '../middleware/featureGate';
 
+import { mapAssessmentRow, mapAssessmentRows } from '../utils/mapAssessmentRow';
+
 const router = express.Router();
 
 // Validation schemas
@@ -76,7 +78,7 @@ router.get('/history', authenticate, async (req: AuthRequest, res) => {
 
     res.json({
       success: true,
-      data: assessments,
+      data: mapAssessmentRows(assessments as any[]),
       total,
       page: parseInt(page),
       limit: parseInt(limit),
@@ -138,7 +140,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res) => {
     if (assessments.length === 0) {
       return res.status(404).json({ success: false, error: 'Assessment not found' });
     }
-    res.json({ success: true, data: assessments[0] });
+    res.json({ success: true, data: mapAssessmentRow(assessments[0] as any) });
   } catch (error) {
     console.error('Get assessment error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch assessment' });

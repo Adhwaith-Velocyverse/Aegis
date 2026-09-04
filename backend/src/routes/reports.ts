@@ -33,7 +33,7 @@ router.get('/:id/pdf', authenticate, canDownloadReports('pdf'), async (req: Auth
   try {
     const assessmentId = req.params.id;
 
-    const assessments = await query('SELECT * FROM assessments WHERE id = ? AND organization_id = ?', [assessmentId, req.user!.organizationId!]);
+    const assessments = await query('SELECT a.*, tc.tenant_name, o.name AS org_name FROM assessments a LEFT JOIN tenant_connections tc ON a.tenant_connection_id = tc.id LEFT JOIN organizations o ON a.organization_id = o.id WHERE a.id = ? AND a.organization_id = ?', [assessmentId, req.user!.organizationId!]);
     if (assessments.length === 0) {
       return res.status(404).json({ success: false, error: 'Assessment not found' });
     }
@@ -105,7 +105,7 @@ router.get('/:id/excel', authenticate, canDownloadReports('excel'), async (req: 
   try {
     const assessmentId = req.params.id;
 
-    const assessments = await query('SELECT * FROM assessments WHERE id = ? AND organization_id = ?', [assessmentId, req.user!.organizationId!]);
+    const assessments = await query('SELECT a.*, tc.tenant_name, o.name AS org_name FROM assessments a LEFT JOIN tenant_connections tc ON a.tenant_connection_id = tc.id LEFT JOIN organizations o ON a.organization_id = o.id WHERE a.id = ? AND a.organization_id = ?', [assessmentId, req.user!.organizationId!]);
     if (assessments.length === 0) {
       return res.status(404).json({ success: false, error: 'Assessment not found' });
     }
@@ -253,7 +253,12 @@ router.post('/:id/share', authenticate, async (req: AuthRequest, res) => {
 router.get('/shared/:token', async (req, res) => {
   try {
     const share = await query(
-      'SELECT rs.*, a.type, a.overall_score, a.score_band, a.completed_at FROM report_shares rs JOIN assessments a ON rs.assessment_id = a.id WHERE rs.share_token = ? AND rs.expires_at > NOW()',
+      `SELECT rs.*, a.type, a.overall_score, a.score_band, a.completed_at, tc.tenant_name, o.name AS org_name
+       FROM report_shares rs
+       JOIN assessments a ON rs.assessment_id = a.id
+       LEFT JOIN tenant_connections tc ON a.tenant_connection_id = tc.id
+       LEFT JOIN organizations o ON a.organization_id = o.id
+       WHERE rs.share_token = ? AND rs.expires_at > NOW()`,
       [req.params.token]
     );
 

@@ -8,6 +8,7 @@ import { getAccessToken } from '../services/graphConnector';
 import { auditLog } from '../middleware/audit';
 import { Microsoft365ConnectionManager, getConnectionManager, clearConnectionManagerCache } from '../services/m365ConnectionManager';
 import { M365ConnectionState, AuthenticationError } from '../types/m365';
+import { oauthStateStore, cleanupExpiredStates } from '../services/oauthStateStore';
 
 // Module-to-scope mapping per Section 16.2 (verified)
 export const MODULE_SCOPE_MAP: Record<string, { scopes: string[]; connectorType: 'graph' | 'powershell' }> = {
@@ -59,24 +60,14 @@ export const DETAILED_ASSESSMENT_MODULES = Object.keys(MODULE_SCOPE_MAP);
 
 const router = express.Router();
 
-// In-memory state store for OAuth (in production, use Redis or database)
-interface OAuthStateData {
-  connectionId: string;
-  organizationId: string;
-  selectedModules?: string[];
-  assessmentType?: 'quick' | 'detailed';
-  isIncremental?: boolean;
-}
-const oauthStateStore = new Map<string, OAuthStateData>();
-
 // Validation schemas
 const connectTenantSchema = z.object({
-  tenantId: z.string().min(1),
-  tenantName: z.string().min(1),
+  tenantId: z.string().trim().min(1),
+  tenantName: z.string().trim().min(1),
   connectionMethod: z.enum(['oauth', 'direct']),
-  azureTenantId: z.string().optional(),
-  azureClientId: z.string().optional(),
-  azureClientSecret: z.string().optional(),
+  azureTenantId: z.string().trim().optional(),
+  azureClientId: z.string().trim().optional(),
+  azureClientSecret: z.string().trim().optional(),
   modules: z.array(z.object({
     name: z.string(),
     isEnabled: z.boolean(),
@@ -219,13 +210,14 @@ router.post('/consent/incremental', authenticate, async (req: AuthRequest, res) 
 
     // Generate state for CSRF protection
     const state = uuidv4();
-    oauthStateStore.set(state, {
+    const statePayload = {
       connectionId,
       organizationId: req.user!.organizationId!,
       selectedModules: modules,
-      assessmentType: assessmentType || 'quick',
+      ...(assessmentType ? { assessmentType } : {}),
       isIncremental: true,
-    });
+    };
+    oauthStateStore.set(state, statePayload);
 
     // Build Microsoft OAuth2 authorization URL with ONLY the new scopes (incremental)
     const authority = getAuthorityUrl(process.env.AZURE_AUTHORITY || 'common');
@@ -250,7 +242,7 @@ router.post('/consent/incremental', authenticate, async (req: AuthRequest, res) 
         modules_requested: modules,
         new_scopes: Array.from(newScopes),
         existing_scopes_count: existingScopes.length,
-        assessment_type: assessmentType || 'quick',
+        ...(assessmentType ? { assessment_type: assessmentType } : {}),
       },
       status: 'success',
     });
@@ -276,7 +268,7 @@ router.post('/consent/incremental', authenticate, async (req: AuthRequest, res) 
 // Initiate consent with selected modules (legacy — kept for backward compatibility)
 router.post('/consent', authenticate, async (req: AuthRequest, res) => {
   try {
-    const { connectionId, modules } = req.body as { connectionId: string; modules: string[] };
+    const { connectionId, modules, assessmentType } = req.body as { connectionId: string; modules: string[]; assessmentType?: 'quick' | 'detailed' };
 
     if (!connectionId || !modules || !Array.isArray(modules)) {
       return res.status(400).json({ success: false, error: 'connectionId and modules array are required' });
@@ -311,6 +303,7 @@ router.post('/consent', authenticate, async (req: AuthRequest, res) => {
       connectionId,
       organizationId: req.user!.organizationId!,
       selectedModules: modules,
+      ...(assessmentType ? { assessmentType } : {}),
     });
 
     // Build Microsoft OAuth2 authorization URL
@@ -342,7 +335,20 @@ router.post('/consent', authenticate, async (req: AuthRequest, res) => {
 router.get('/', authenticate, async (req: AuthRequest, res) => {
   try {
     const connections = await query(
-      'SELECT id, organization_id AS organizationId, tenant_id AS tenantId, tenant_name AS tenantName, connection_status AS connectionStatus, last_health_check AS lastHealthCheck, created_at AS createdAt, updated_at AS updatedAt, consented_scopes AS consentedScopes FROM tenant_connections WHERE organization_id = ?',
+      `SELECT 
+        tc.id,
+        tc.organization_id AS organizationId,
+        tc.tenant_id AS tenantId,
+        tc.tenant_name AS tenantName,
+        tc.connection_status AS connectionStatus,
+        tc.last_health_check AS lastHealthCheck,
+        tc.created_at AS createdAt,
+        tc.updated_at AS updatedAt,
+        tc.consented_scopes AS consentedScopes,
+        (SELECT COUNT(*) FROM assessments WHERE tenant_connection_id = tc.id) AS assessmentCount,
+        (SELECT MAX(created_at) FROM assessments WHERE tenant_connection_id = tc.id) AS lastAssessedAt
+      FROM tenant_connections tc
+      WHERE tc.organization_id = ?`,
       [req.user!.organizationId!]
     );
     res.json({ success: true, data: connections });
@@ -434,9 +440,28 @@ router.post('/connect', authenticate, async (req: AuthRequest, res) => {
       } catch (initError: any) {
         const restoreState = ['connected', 'healthy', 'degraded'].includes(previousStatus) ? previousStatus : 'error';
         await query('UPDATE tenant_connections SET connection_status = ? WHERE id = ?', [restoreState, connectionId]);
+        
+        console.error('[DirectConnect] Validation failed:', {
+          connectionId,
+          tenantId,
+          tenantName,
+          errorMessage: initError.message,
+          statusCode: initError.statusCode,
+          errorType: initError.type,
+        });
+
+        let userMessage = 'Connection validation failed. Please check your credentials and try again.';
+        if (initError.statusCode === 403 || initError.type === 'PERMISSION_DENIED') {
+          userMessage = 'Microsoft Graph permission denied. Ensure the app registration has admin-consented application permissions (not delegated) for Microsoft Graph, then try again.';
+        } else if (initError.statusCode === 401 || initError.type === 'AUTH_ERROR') {
+          userMessage = 'Authentication failed. Verify the Azure Tenant ID, Client ID, and Client Secret are correct, then try again.';
+        } else if (initError.message && !initError.message.includes('Failed to connect tenant')) {
+          userMessage = initError.message;
+        }
+        
         res.status(502).json({
           success: false,
-          error: 'Connection validation failed. Please check your credentials and try again.',
+          error: userMessage,
           data: {
             connectionId,
             state: M365ConnectionState.ERROR,
@@ -771,19 +796,5 @@ router.post('/:id/health-check', authenticate, async (req: AuthRequest, res) => 
   }
 });
 
-// Clean up expired OAuth states (run periodically in production)
-export function cleanupExpiredStates() {
-  // In production, add timestamps and clean up states older than 10 minutes
-  const now = Date.now();
-  for (const [state, data] of oauthStateStore.entries()) {
-    // Simple cleanup - remove states older than 10 minutes
-    // In production, store timestamps and check them
-    if (oauthStateStore.size > 1000) {
-      const firstKey = oauthStateStore.keys().next().value;
-      if (firstKey) oauthStateStore.delete(firstKey);
-    }
-  }
-}
-
-export { oauthStateStore };
+export { oauthStateStore, cleanupExpiredStates } from '../services/oauthStateStore';
 export default router;

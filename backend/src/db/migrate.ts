@@ -246,7 +246,8 @@ async function migrate() {
       question TEXT NOT NULL,
       category VARCHAR(100) NOT NULL,
       weight DECIMAL(5,2) DEFAULT 1.0,
-      order_num INT NOT NULL
+      order_num INT NOT NULL,
+      UNIQUE KEY unique_order_num (order_num)
     )`,
 
     // Trial Answers
@@ -519,6 +520,17 @@ async function migrate() {
       // table doesn't exist yet
     } else {
       console.error('Failed to make overall_score nullable on security_scores:', error.message);
+    }
+  }
+
+  try {
+    await query('ALTER TABLE trial_questionnaires ADD UNIQUE KEY unique_order_num (order_num)');
+    console.log('Added unique constraint on order_num to trial_questionnaires');
+  } catch (error: any) {
+    if (error.message?.includes('Duplicate key name') || error.message?.includes('Unknown table')) {
+      // constraint already exists or table doesn't exist yet
+    } else {
+      console.error('Failed to add unique constraint to trial_questionnaires:', error.message);
     }
   }
 

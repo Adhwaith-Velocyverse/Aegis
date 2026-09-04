@@ -17,7 +17,7 @@ export default function UserGuidePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4">
         {/* Hero Section */}
         <div className="bg-white rounded-xl shadow-sm border p-8 mb-8">

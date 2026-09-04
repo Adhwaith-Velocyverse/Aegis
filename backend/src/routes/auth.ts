@@ -7,7 +7,8 @@ import { query } from '../db/connection';
 import { z } from 'zod';
 import { User, Organization } from '@aegis/shared';
 import { exchangeCodeForTokens, storeTokens, mergeConsentedScopes, OAUTH_SCOPES } from '../services/msalAuth';
-import { oauthStateStore, MODULE_SCOPE_MAP } from './tenants';
+import { oauthStateStore, loadOAuthStateFromRedis } from '../services/oauthStateStore';
+import { MODULE_SCOPE_MAP } from './tenants';
 import { authenticate, AuthRequest, clearIPAttempts, blacklistToken } from '../middleware/auth';
 import { sendEmail } from '../services/notifications';
 import { auditLog } from '../middleware/audit';
@@ -405,10 +406,6 @@ router.get('/callback', async (req, res) => {
   try {
     const { code, state, error, error_description } = req.query;
 
-    console.log('[OAuth Callback] Received request with query:', JSON.stringify(req.query));
-    console.log('[OAuth Callback] State store size:', oauthStateStore.size);
-    console.log('[OAuth Callback] Headers:', JSON.stringify(req.headers));
-
     // Handle OAuth errors
     if (error) {
       console.error('OAuth error:', error, error_description);
@@ -428,12 +425,19 @@ router.get('/callback', async (req, res) => {
 
     const stateData = oauthStateStore.get(state);
     if (!stateData) {
-      console.error('[OAuth Callback] Invalid state - not found in store. Available states:', Array.from(oauthStateStore.keys()));
-      return res.redirect(`${process.env.FRONTEND_URL}/connect-tenant?error=invalid_state`);
+      console.error('[OAuth Callback] State not found in memory, trying Redis fallback...');
+      const redisState = await loadOAuthStateFromRedis(state);
+      if (redisState) {
+        // Restore to memory for subsequent calls
+        oauthStateStore.set(state, redisState);
+      }
+      if (!redisState) {
+        console.error('[OAuth Callback] Invalid state - not found in store or Redis. Available states:', Array.from(oauthStateStore.keys()));
+        return res.redirect(`${process.env.FRONTEND_URL}/connect-tenant?error=invalid_state`);
+      }
     }
 
     const { connectionId, selectedModules, isIncremental, assessmentType } = stateData;
-    console.log('[OAuth Callback] State data found:', { connectionId, selectedModules, isIncremental, assessmentType });
 
     // Clear the state from store
     oauthStateStore.delete(state);
@@ -472,13 +476,10 @@ router.get('/callback', async (req, res) => {
 
       scopesToRequest = Array.from(newScopes);
     }
-    console.log('[OAuth Callback] Scopes to request:', scopesToRequest);
 
     let tokens: { accessToken: string; refreshToken: string; expiresIn: number } | null = null;
     try {
-      console.log('[OAuth Callback] Exchanging code for tokens...');
       tokens = await exchangeCodeForTokens(code, '', scopesToRequest);
-      console.log('[OAuth Callback] Token exchange successful');
     } catch (error: any) {
       console.error('Token exchange error:', error);
       res.redirect(`${process.env.FRONTEND_URL}/connect-tenant?error=${encodeURIComponent(error.message || 'token_exchange_failed')}`);
@@ -505,12 +506,9 @@ router.get('/callback', async (req, res) => {
 
     // Store tokens in database with the consented scopes
     // For incremental consent, merge with existing scopes
-    console.log('[OAuth Callback] Storing tokens for connection:', connectionId);
     await storeTokens(connectionId, tokens.accessToken, tokens.refreshToken, Array.from(consentedScopes), undefined, !isIncremental);
-    console.log('[OAuth Callback] Tokens stored successfully');
 
     // Redirect to frontend with success - include assessment type to auto-start assessment
-    console.log('[OAuth Callback] Redirecting to frontend');
     const redirectUrl = assessmentType
       ? `${process.env.FRONTEND_URL}/connect-tenant?connected=true&connectionId=${connectionId}&assessmentType=${assessmentType}`
       : `${process.env.FRONTEND_URL}/connect-tenant?connected=true&connectionId=${connectionId}`;
@@ -712,12 +710,21 @@ router.get('/oauth/callback', async (req, res) => {
     // Determine provider from state or query param
     let oauthProvider = provider as string;
     if (!oauthProvider && state) {
-      const stateData = oauthStateStore.get(state as string);
+      let stateData = oauthStateStore.get(state as string);
+      if (!stateData) {
+        const redisState = await loadOAuthStateFromRedis(state as string);
+        if (redisState) {
+          oauthStateStore.set(state as string, redisState);
+          stateData = redisState;
+        }
+      }
       if (stateData && stateData.selectedModules) {
         if (stateData.selectedModules.includes('google')) oauthProvider = 'google';
         else if (stateData.selectedModules.includes('microsoft')) oauthProvider = 'microsoft';
       }
-      oauthStateStore.delete(state as string);
+      if (stateData) {
+        oauthStateStore.delete(state as string);
+      }
     }
 
     if (!oauthProvider) {

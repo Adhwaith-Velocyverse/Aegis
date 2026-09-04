@@ -47,9 +47,9 @@ export async function getPlanFeatures(organizationId: string): Promise<PlanFeatu
   const features = typeof sub.features === 'string' ? JSON.parse(sub.features) : (sub.features || {});
 
   return {
-    canRunQuick: true, // All paid plans can run Quick
-    canRunDetailed: sub.plan_name !== 'Free',
-    canDownloadPdf: true, // All plans can download PDF
+    canRunQuick: true,
+    canRunDetailed: true,
+    canDownloadPdf: true,
     canDownloadExcel: sub.plan_name !== 'Free',
     canShareReport: sub.plan_name !== 'Free',
     canViewHistory: sub.plan_name !== 'Free',
@@ -73,8 +73,8 @@ export async function getPlanFeatures(organizationId: string): Promise<PlanFeatu
 
 function getFreePlanFeatures(): PlanFeatures {
   return {
-    canRunQuick: false,
-    canRunDetailed: false,
+    canRunQuick: true,
+    canRunDetailed: true,
     canDownloadPdf: true,
     canDownloadExcel: false,
     canShareReport: false,

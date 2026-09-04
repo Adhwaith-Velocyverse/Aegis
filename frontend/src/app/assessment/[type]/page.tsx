@@ -26,7 +26,7 @@ const ASSESSMENT_CONFIGS: Record<AssessmentType, AssessmentConfig> = {
     type: 'quick',
     title: 'Quick Assessment',
     description: 'Automated security check using critical controls',
-    price: '$5',
+    price: 'FREE',
     duration: '5-10 minutes',
     features: [
       '100% automated - no manual review',
@@ -48,7 +48,7 @@ const ASSESSMENT_CONFIGS: Record<AssessmentType, AssessmentConfig> = {
     type: 'detailed',
     title: 'Detailed Assessment',
     description: 'Comprehensive review with expert analysis',
-    price: '$7',
+    price: 'FREE',
     duration: '2-3 business days',
     features: [
       'Full control catalog evaluation',
@@ -140,7 +140,7 @@ export default function AssessmentPage() {
         const consentRes = await api.get(`/tenants/${connectedTenant.id}/consent-status`);
         if (consentRes.data.success && !consentRes.data.data.isFullyConsented) {
           // Redirect to consent page for incremental consent
-          router.push(`/consent?connectionId=${connectedTenant.id}&type=${type}`);
+          router.push(`/consent?connectionId=${connectedTenant.id}&assessmentType=${type}`);
           setStarting(false);
           setStep('confirm');
           return;
@@ -175,10 +175,10 @@ export default function AssessmentPage() {
             <h2 className="text-xl font-bold text-red-900 mb-2">Unable to Start Assessment</h2>
             <p className="text-red-700 mb-6">{error}</p>
             <div className="space-y-3">
-              <button
-                onClick={() => router.push('/connect-tenant')}
-                className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
-              >
+                <button
+                  onClick={() => router.push(`/connect-tenant?assessmentType=${type}`)}
+                  className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                >
                 Connect Tenant
               </button>
               <button
@@ -209,7 +209,7 @@ export default function AssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-3xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
