@@ -34,8 +34,8 @@ export function mapAssessmentRow(row: AssessmentRow): Assessment {
     durationMs: row.duration_ms ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
-    tenantName: row.tenant_name ?? undefined,
-    assessmentOwner: row.assessmentOwner ?? undefined,
+    tenantName: row.tenant_name ?? row.tenantName ?? undefined,
+    assessmentOwner: row.assessment_owner ?? row.assessmentOwner ?? undefined,
   };
 }
 

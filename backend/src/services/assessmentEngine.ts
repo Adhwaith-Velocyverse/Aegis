@@ -209,10 +209,22 @@ export async function runAssessment(assessmentId: string, type: AssessmentType, 
 
     const band = deriveBand(securityScore.overallScore ?? 0);
 
+    // Calculate duration from started_at to now
+    const durationResult = await query(
+      'SELECT started_at FROM assessments WHERE id = ?',
+      [assessmentId]
+    );
+    let durationMs = 0;
+    if ((durationResult as any[]).length > 0) {
+      const row = (durationResult as any[])[0];
+      const startedAt = row.started_at ? new Date(row.started_at) : new Date();
+      durationMs = new Date().getTime() - startedAt.getTime();
+    }
+
     // Update assessment with final results
     await query(
-      'UPDATE assessments SET status = ?, overall_score = ?, score_band = ?, completed_at = NOW() WHERE id = ?',
-      [assessmentStatus, securityScore.overallScore ?? 0, band.scoreBand, assessmentId]
+      'UPDATE assessments SET status = ?, overall_score = ?, score_band = ?, duration_ms = ?, completed_at = NOW() WHERE id = ?',
+      [assessmentStatus, securityScore.overallScore ?? 0, band.scoreBand, durationMs, assessmentId]
     );
 
     // Store band color and description in assessment metadata

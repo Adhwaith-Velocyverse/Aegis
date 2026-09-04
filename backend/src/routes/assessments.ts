@@ -136,7 +136,10 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
 // Get assessment by ID
 router.get('/:id', authenticate, async (req: AuthRequest, res) => {
   try {
-    const assessments = await query('SELECT * FROM assessments WHERE id = ? AND organization_id = ?', [req.params.id, req.user!.organizationId!]);
+    const assessments = await query(
+      'SELECT a.*, tc.tenant_name FROM assessments a LEFT JOIN tenant_connections tc ON a.tenant_connection_id = tc.id WHERE a.id = ? AND a.organization_id = ?',
+      [req.params.id, req.user!.organizationId!]
+    );
     if (assessments.length === 0) {
       return res.status(404).json({ success: false, error: 'Assessment not found' });
     }
